@@ -1,0 +1,30 @@
+/* 🚀 ИСПРАВЛЕНО: Стили перенесены с :host на .coin-links */
+
+:host {
+  // :host (сам <app-links>) просто должен быть блочным
+  display: block;
+}
+
+/* 🚀 ИСПРАВЛЕНО: Теперь 'gap' будет работать,
+   т.к. стили применяются к div.coin-links */
+.coin-links {
+  display: flex;
+  align-items: center;
+  gap: 6px; // Расстояние МЕЖДУ иконками
+  padding: 0 4px; // Расстояние СЛЕВА и СПРАВА от группы
+}
+
+/* Стили иконок (без изменений) */
+.service-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.service-logo:hover {
+  transform: scale(1.2);
+  opacity: 0.9;
+}

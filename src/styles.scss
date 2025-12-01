@@ -1,0 +1,52 @@
+/* Глобальный файл стилей (styles.scss) */
+@use '@angular/material' as mat;
+
+// 1. Определяем палитру (M3).
+html {
+  @include mat.theme((
+    color: (
+      primary: mat.$magenta-palette,
+      accent: mat.$cyan-palette, // <-- Вот эта строка, 'cyan' (голубой)
+      tertiary: mat.$violet-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  // --- 🚀 ЭТО ГЛАВНОЕ ИЗМЕНЕНИЕ ---
+  // "light" -> "dark"
+  // Это переключит всю M3-тему (и все переменные) на темный режим.
+  color-scheme: dark;
+
+  // Эти переменные (var) автоматически возьмут темные цвета
+  // из-за 'color-scheme: dark'
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Сброс отступов
+  margin: 0;
+}
+
+/*
+ * Общая настройка, гарантирующая правильные размеры.
+*/
+* {
+  box-sizing: border-box;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  // Расчет высоты: 100% окна (vh) минус 48px (высота навбара)
+  // 48px взято из navbar.scss
+  min-height: 75vh; // 75% высоты видимой области
+}

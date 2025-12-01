@@ -1,0 +1,70 @@
+@if (isLoading()) {
+<div class="loading-spinner">
+  <app-loading-spinner></app-loading-spinner>
+</div>
+} @else {
+
+<div class="coins-header">
+
+  <!-- Поисковик -->
+  <app-search-filter (searchChange)="onFilterChange($event)"></app-search-filter>
+
+  <!-- Заголовок -->
+  <h2 class="header-title">Coins {{ selectionCount() > 0 ? '(' + selectionCount() + ')' : '' }}</h2>
+
+  <!-- Кнопки -->
+  <div class="header-actions">
+    <!-- ✅ Чекбокс для выбора всех -->
+    <button class="action-button" matRipple (click)="toggleSelectAll()" [class.active]="hasSelection()"
+      [disabled]="!hasSelection()">
+      <mat-icon>
+        {{ hasSelection() ? 'check_box' : 'check_box_outline_blank' }}
+      </mat-icon>
+    </button>
+
+    <button class="action-button" matRipple (click)="openTradingView()">
+      <mat-icon>
+        <img src="assets/icons/tv.svg" alt="TV" class="svg-icon">
+      </mat-icon>
+    </button>
+    <button class="action-button" matRipple (click)="openCoinGlass()">
+      <mat-icon>
+        <img src="assets/icons/cg.svg" alt="TV" class="svg-icon">
+      </mat-icon>
+    </button>
+    <button class="action-button" matRipple (click)="sortOut()">
+      <mat-icon [svgIcon]="sortIcon()"></mat-icon>
+    </button>
+    <button class="action-button" matRipple>
+      <mat-icon>candlestick_chart</mat-icon>
+    </button>
+    <button class="action-button" matRipple>
+      <mat-icon>show_chart</mat-icon>
+    </button>
+
+    <button class="action-button" (click)="closeWindows()" matRipple>
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+</div>
+
+<!-- Капсулы монет -->
+<div class="coin-pills-container">
+
+  @for (coin of filteredCoins(); track coin.symbol) {
+  <app-coin-item [coin]="coin" />
+  } @empty {
+  <div class="empty-list-message">
+    <span>
+      @if (filterText()) {
+      Монет по фильтру "{{filterText()}}" не найдено.
+      } @else {
+      Не удалось загрузить монеты.
+      }
+    </span>
+  </div>
+  }
+</div>
+
+}

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradingView with IndexedDB VWAP</title>
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+
+<body style="margin:0;padding:0;height:100vh;font-family:system-ui;">
+
+  <div
+    style="position:absolute;top:10px;left:10px;z-index:1000;background:rgba(255,255,255,0.95);padding:12px;border-radius:6px;box-shadow:0 2px 15px rgba(0,0,0,0.15);">
+    <h1 style="margin:0 0 5px 0;font-size:20px;">BTC/USDT</h1>
+    <p style="margin:0;font-size:12px;color:#666;">Lightweight Charts™ • IndexedDB Storage</p>
+    <div id="price-legend" style="font-size:14px;font-weight:bold;margin-top:8px;">Loading...</div>
+    <div id="vwap-count" style="font-size:12px;color:#2962FF;margin-top:5px;font-weight:600;">Active VWAP lines: 0</div>
+    <button id="clear-btn"
+      style="margin-top:8px;padding:6px 12px;background:#ef5350;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;">🧹
+      Clear All VWAP</button>
+    <div style="font-size:11px;color:#666;margin-top:10px;padding-top:10px;border-top:1px solid #ddd;line-height:1.5;">
+      🎯 <strong>Click on CANDLE</strong> to add Anchored VWAP<br>
+      🗑️ <strong>Click on VWAP line</strong> to remove it<br>
+      💾 <strong>Anchored by TIME</strong> - works with any data!
+    </div>
+  </div>
+
+  <div id="chart-container" style="width:100%;height:100%;"></div>
+
+  <script type="module">
+    // ==================== IndexedDB Manager ====================
+    class VWAPDatabase {
+      constructor() {
+        this.dbName = 'VWAPStorage';
+        this.storeName = 'vwaps';
+        this.db = null;
+      }
+
+      async init() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(this.dbName, 1);
+
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            this.db = request.result;
+            console.log('✅ IndexedDB инициализирована');
+            resolve();
+          };
+
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(this.storeName)) {
+              const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
+              store.createIndex('createdAt', 'createdAt', { unique: false });
+              console.log('✅ Создана таблица VWAP');
+            }
+          };
+        });
+      }
+
+      async save(vwapData) {
+        return new Promise((resolve, reject) => {
+          const transaction = this.db.transaction([this.storeName], 'readwrite');
+          const store = transaction.objectStore(this.storeName);
+          const request = store.put(vwapData);
+
+          request.onsuccess = () => {
+            console.log(`💾 Сохранено: ${vwapData.id}`);
+            resolve(vwapData.id);
+          };
+          request.onerror = () => reject(request.error);
+        });
+      }
+
+      async delete(id) {
+        return new Promise((resolve, reject) => {
+          const transaction = this.db.transaction([this.storeName], 'readwrite');
+          const store = transaction.objectStore(this.storeName);
+          const request = store.delete(id);
+
+          request.onsuccess = () => {
+            console.log(`🗑️ Удалено: ${id}`);
+            resolve();
+          };
+          request.onerror = () => reject(request.error);
+        });
+      }
+
+      async getAll() {
+        return new Promise((resolve, reject) => {
+          const transaction = this.db.transaction([this.storeName], 'readonly');
+          const store = transaction.objectStore(this.storeName);
+          const request = store.getAll();
+
+          request.onsuccess = () => {
+            console.log(`📥 Загружено ${request.result.length} записей`);
+            resolve(request.result);
+          };
+          request.onerror = () => reject(request.error);
+        });
+      }
+
+      async clear() {
+        return new Promise((resolve, reject) => {
+          const transaction = this.db.transaction([this.storeName], 'readwrite');
+          const store = transaction.objectStore(this.storeName);
+          const request = store.clear();
+
+          request.onsuccess = () => {
+            console.log('🧹 База данных очищена');
+            resolve();
+          };
+          request.onerror = () => reject(request.error);
+        });
+      }
+    }
+
+    // ==================== Chart Initialization ====================
+    async function initChart() {
+      const container = document.getElementById('chart-container');
+      const legend = document.getElementById('price-legend');
+      const vwapCount = document.getElementById('vwap-count');
+
+      if (!window.LightweightCharts) {
+        console.error('❌ Библиотека не загружена');
+        return;
+      }
+
+      // Инициализируем БД
+      const db = new VWAPDatabase();
+      await db.init();
+
+      const chart = LightweightCharts.createChart(container, {
+        layout: { background: { color: '#ffffff' }, textColor: '#333' },
+        grid: { vertLines: { color: '#f0f3fa' }, horzLines: { color: '#f0f3fa' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#D1D4DC' },
+        timeScale: { borderColor: '#D1D4DC', timeVisible: true, secondsVisible: false },
+      });
+
+      const candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+      });
+
+      // Генерация данных
+      function generateData() {
+        const data = [];
+        let time = new Date(Date.UTC(2023, 0, 1, 0, 0, 0, 0));
+        let close = 20000;
+
+        for (let i = 0; i < 2000; i++) {
+          const open = close;
+          const change = (Math.random() - 0.5) * 150;
+          close = open + change;
+
+          const high = Math.max(open, close) + Math.random() * 75;
+          const low = Math.min(open, close) - Math.random() * 75;
+          const volume = Math.random() * 1000000 + 500000;
+
+          time.setHours(time.getHours() + 1);
+
+          data.push({
+            time: time.getTime() / 1000,
+            open, high, low, close, volume
+          });
+        }
+        return data;
+      }
+
+      const data = generateData();
+      candlestickSeries.setData(data);
+
+      const anchoredVWAPs = [];
+
+      function generateVWAPId() {
+        return `vwap_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      function calculateAnchoredVWAP(anchorIndex) {
+        const vwapData = [];
+        let cumulativePV = 0;
+        let cumulativeVolume = 0;
+
+        for (let i = anchorIndex; i < data.length; i++) {
+          const bar = data[i];
+          const typicalPrice = (bar.high + bar.low + bar.close) / 3;
+
+          cumulativePV += typicalPrice * bar.volume;
+          cumulativeVolume += bar.volume;
+
+          vwapData.push({
+            time: bar.time,
+            value: cumulativePV / cumulativeVolume
+          });
+        }
+
+        return vwapData;
+      }
+
+      async function addAnchoredVWAP(clickedTime, savedData = null) {
+        // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ищем свечу по времени, а не используем сохранённый индекс
+        const anchorIndex = data.findIndex(bar => bar.time >= clickedTime);
+
+        if (anchorIndex === -1 || anchorIndex === data.length - 1) {
+          console.warn('❌ Невозможно добавить VWAP: свеча не найдена в текущих данных');
+          return;
+        }
+
+        const vwapData = calculateAnchoredVWAP(anchorIndex);
+        if (vwapData.length === 0) return;
+
+        const colors = ['#2962FF', '#F23645', '#089981', '#FF6D00', '#7C4DFF'];
+        const color = savedData?.color || colors[anchoredVWAPs.length % colors.length];
+        const vwapId = savedData?.id || generateVWAPId();
+
+        const vwapSeries = chart.addLineSeries({
+          color: color,
+          lineWidth: 2,
+          lastValueVisible: true,
+          priceLineVisible: false,
+          crosshairMarkerVisible: true,
+        });
+
+        vwapSeries.setData(vwapData);
+
+        const vwapObject = {
+          id: vwapId,
+          anchorTime: clickedTime,  // ← Сохраняем ВРЕМЯ, не индекс!
+          anchorIndex: anchorIndex,
+          series: vwapSeries,
+          color: color,
+          data: vwapData,
+          createdAt: savedData?.createdAt || new Date().toISOString()
+        };
+
+        anchoredVWAPs.push(vwapObject);
+
+        // Сохраняем в IndexedDB (только время и цвет, индекс не нужен!)
+        if (!savedData) {
+          await db.save({
+            id: vwapObject.id,
+            anchorTime: vwapObject.anchorTime,  // ← Только время!
+            color: vwapObject.color,
+            createdAt: vwapObject.createdAt
+          });
+        }
+
+        updateVWAPCount();
+
+        const anchorBar = data[anchorIndex];
+        console.log(`✅ VWAP добавлен | ID: ${vwapId} | Anchor: ${new Date(anchorBar.time * 1000).toLocaleString()} | Time: ${clickedTime}`);
+      }
+
+      function updateVWAPCount() {
+        vwapCount.textContent = `Active VWAP lines: ${anchoredVWAPs.length}`;
+      }
+
+      // Обработчик кликов
+      chart.subscribeClick(async (param) => {
+        if (!param || !param.point || !param.time) return;
+
+        const candleData = param.seriesData.get(candlestickSeries);
+        if (!candleData) return;
+
+        const clickedPrice = candlestickSeries.coordinateToPrice(param.point.y);
+        if (clickedPrice === null) return;
+
+        // Проверяем клик на VWAP линию
+        for (let i = 0; i < anchoredVWAPs.length; i++) {
+          const vwapObj = anchoredVWAPs[i];
+          const vwapDataPoint = vwapObj.data.find(point => point.time === param.time);
+
+          if (vwapDataPoint) {
+            const vwapValue = vwapDataPoint.value;
+            const tolerance = vwapValue * 0.001;
+
+            if (Math.abs(clickedPrice - vwapValue) <= tolerance) {
+              const deletedId = vwapObj.id;
+              chart.removeSeries(vwapObj.series);
+              anchoredVWAPs.splice(i, 1);
+
+              await db.delete(deletedId);
+
+              updateVWAPCount();
+              console.log(`🗑️ VWAP удалён | ID: ${deletedId}`);
+              return;
+            }
+          }
+        }
+
+        // Проверяем клик на свечу
+        const isOnCandle = clickedPrice >= candleData.low && clickedPrice <= candleData.high;
+        if (isOnCandle) {
+          console.log('🎯 Добавляем VWAP');
+          await addAnchoredVWAP(param.time);
+        }
+      });
+
+      // Легенда
+      function updateLegend(param) {
+        const validCrosshairPoint = !(
+          param === undefined || param.time === undefined || param.point?.x < 0 || param.point?.y < 0
+        );
+
+        if (validCrosshairPoint) {
+          const candleData = param.seriesData.get(candlestickSeries);
+          if (candleData?.close) {
+            const price = candleData.close.toFixed(2);
+            if (candleData.open && candleData.high && candleData.low) {
+              legend.innerHTML = `O: ${candleData.open.toFixed(2)}  H: ${candleData.high.toFixed(2)}  L: ${candleData.low.toFixed(2)}  C: ${price}`;
+              legend.style.color = candleData.close >= candleData.open ? '#26a69a' : '#ef5350';
+            } else {
+              legend.innerHTML = `C: ${price}`;
+            }
+          }
+        } else {
+          const lastBar = data[data.length - 1];
+          if (lastBar) {
+            legend.innerHTML = `Last: ${lastBar.close.toFixed(2)}`;
+            legend.style.color = lastBar.close >= lastBar.open ? '#26a69a' : '#ef5350';
+          }
+        }
+      }
+
+      chart.subscribeCrosshairMove(updateLegend);
+      updateLegend(undefined);
+
+      // Загружаем сохранённые VWAP
+      const savedVWAPs = await db.getAll();
+      console.log(`📥 Найдено ${savedVWAPs.length} сохранённых VWAP`);
+
+      for (const savedVWAP of savedVWAPs) {
+        // Ищем свечу по anchorTime в ТЕКУЩИХ данных
+        const foundIndex = data.findIndex(bar => bar.time >= savedVWAP.anchorTime);
+
+        if (foundIndex !== -1) {
+          await addAnchoredVWAP(savedVWAP.anchorTime, savedVWAP);
+          console.log(`✅ Восстановлен VWAP | ID: ${savedVWAP.id} | Time: ${savedVWAP.anchorTime}`);
+        } else {
+          console.warn(`⚠️ VWAP ${savedVWAP.id} не восстановлен: свеча не найдена в текущих данных`);
+        }
+      }
+
+      // Кнопка очистки
+      document.getElementById('clear-btn').addEventListener('click', async () => {
+        if (!confirm('Удалить все VWAP линии из базы данных?')) return;
+
+        // Удаляем все линии с графика
+        for (const vwapObj of anchoredVWAPs) {
+          chart.removeSeries(vwapObj.series);
+        }
+        anchoredVWAPs.length = 0;
+
+        // Очищаем БД
+        await db.clear();
+        updateVWAPCount();
+
+        console.log('🧹 Все VWAP удалены');
+      });
+
+      // Ресайз
+      new ResizeObserver(entries => {
+        if (entries.length === 0 || entries[0].target !== container) return;
+        const newRect = entries[0].contentRect;
+        chart.applyOptions({ height: newRect.height, width: newRect.width });
+      }).observe(container);
+
+      chart.timeScale().fitContent();
+
+      // Добавляем в window для отладки
+      window.vwapDB = db;
+      console.log('💡 Доступно: window.vwapDB.clear() - очистить БД');
+    }
+
+    window.onload = initChart;
+  </script>
+
+</body>
+
+</html>

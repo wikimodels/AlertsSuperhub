@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true, // ✅ <--- ВОТ ЭТО ИСПРАВЛЕНИЕ
+    "inlineSources": true, // [строка 9] Эта опция теперь работает
+    "types": []
+  },
+  "exclude": [
+    "src/test.ts",
+    "**/*.spec.ts"
+  ]
+}

@@ -1,0 +1,19 @@
+<div class="coin-links">
+
+  @if (hasBinance()) {
+  <img [src]="binanceLogo()" alt="Binance" class="service-logo" (click)="clickBinance($event)">
+  }
+
+  @if (hasBybit()) {
+  <img [src]="bybitLogo()" alt="Bybit" class="service-logo" (click)="clickBybit($event)">
+  }
+
+  @if (tvLink()) {
+  <img [src]="tvLogo()" alt="TradingView" class="service-logo" (click)="clickTv($event)">
+  }
+
+  @if (cgLink()) {
+  <img [src]="cgLogo()" alt="Coinglass" class="service-logo" (click)="clickCg($event)">
+  }
+
+</div>

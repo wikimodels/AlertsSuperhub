@@ -1,0 +1,42 @@
+:host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: block;
+}
+
+:host ::ng-deep mat-toolbar {
+  background-color: var(--mat-sys-primary-container) !important;
+  color: var(--mat-sys-on-primary-container) !important;
+
+  // Compact height
+  height: 48px !important;
+  min-height: 48px !important;
+
+  // Reduce padding
+  padding: 0 16px !important;
+
+  // Smaller font
+  font-size: 14px !important;
+
+  // Compact buttons and icons
+  .mat-mdc-icon-button {
+    --mdc-icon-button-state-layer-size: 40px;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
