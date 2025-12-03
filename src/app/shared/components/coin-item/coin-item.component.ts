@@ -6,7 +6,7 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 // import { MatButtonModule } from '@angular/material/button';
 // import { MatIconModule } from '@angular/material/icon';
 // import { MatTooltipModule } from '@angular/material/tooltip';
-import { WorkingCoin } from '../../../coins/models/working-coin.model';
+import { WorkingCoin } from '../../models/working-coin.model';
 import { CoinLinksService } from '../../services/coin-links.service';
 import { GenericSelectionService } from '../../services/generic.selection.service';
 import { LinksComponent } from '../links/links.component';

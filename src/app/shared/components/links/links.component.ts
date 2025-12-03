@@ -1,7 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 // ❗️ Пути могут потребовать коррекции в зависимости от того, где вы создали папку
-import { WorkingCoin } from '../../../coins/models/working-coin.model';
+import { WorkingCoin } from '../../models/working-coin.model';
 import { CoinLinksService } from '../../services/coin-links.service';
 
 @Component({

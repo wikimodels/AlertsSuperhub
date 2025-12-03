@@ -9,8 +9,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { LoadingSpinnerComponent } from '../shared/components/loading-spinner/loading-spinner.component';
-import { WorkingCoin } from '../shared/models/working-coin.model';
-import { CoinsService } from './services/coins.service';
+
 import { CoinItemComponent } from '../shared/components/coin-item/coin-item.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -22,6 +21,7 @@ import { MatRipple } from '@angular/material/core';
 import { NotificationService } from '../shared/services/notification.service';
 import { CoinWindowService } from '../shared/services/coin-window.service';
 import { WorkingCoinsApiService } from '../shared/services/api/working-coins-api.service';
+import { WorkingCoin } from '../shared/models/working-coin.model';
 
 type SortMode = 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc';
 
@@ -39,17 +39,16 @@ type SortMode = 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc';
     SearchFilterComponent,
     MatRipple,
   ],
-  templateUrl: './coins.html',
-  styleUrls: ['./coins.scss'],
+  templateUrl: './working-coins.html',
+  styleUrls: ['./working-coins.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Coins {
+export class WorkingCoins {
   // ✅ Инъекция сервисов
-  private coinsService = inject(CoinsService);
+  private workingCoinsService = inject(WorkingCoinsApiService);
   private selectionService = inject(GenericSelectionService<WorkingCoin>);
   private notificationService = inject(NotificationService);
   private coinWindowService = inject(CoinWindowService);
-  private workingCoinsService = inject(WorkingCoinsApiService);
 
   // ✅ Состояние компонента
   public coins = signal<WorkingCoin[]>([]);
@@ -118,7 +117,7 @@ export class Coins {
   private async loadCoins() {
     try {
       this.isLoading.set(true);
-      const coinData = await this.coinsService.getWorkingCoins();
+      const coinData = await this.workingCoinsService.getAllCoinsAsync();
       this.coins.set(coinData);
     } catch (error) {
       console.error('❌ CoinsComponent: Ошибка загрузки монет', error);
@@ -186,12 +185,33 @@ export class Coins {
     this.coinWindowService.openSingleWindow(this.bitcoinUrl);
   }
 
-  public closeWindows(): void {
-    this.coinWindowService.closeAllWindows();
+  public async deleteSelected(): Promise<void> {
+    const selected = this.selectionSignal();
+    if (selected.length === 0) return;
+
+    const symbols = selected.map((coin) => coin.symbol);
+
+    try {
+      // Удаляем с сервера
+      await this.workingCoinsService.deleteCoinsBatchAsync(symbols);
+
+      // ✅ Обновляем локальный список
+      const currentCoins = this.coins();
+      const updatedCoins = currentCoins.filter((coin) => !symbols.includes(coin.symbol));
+      this.coins.set(updatedCoins);
+
+      // Очищаем выбор
+      this.selectionService.clear();
+
+      // Показываем уведомление
+      this.notificationService.success(`${symbols.length} coin(s) deleted`);
+    } catch (error) {
+      console.error('❌ Ошибка удаления монет:', error);
+      this.notificationService.error('Failed to delete coins');
+    }
   }
 
-  public addToWork(): void {
-    this.workingCoinsService.addCoinsBatchAsync(this.selectionSignal());
-    this.selectionService.clear();
+  public closeWindows(): void {
+    this.coinWindowService.closeAllWindows();
   }
 }

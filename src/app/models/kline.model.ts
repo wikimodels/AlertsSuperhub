@@ -165,6 +165,7 @@ export interface Candle {
 export interface CoinMarketData {
   symbol: string;
   exchanges: string[];
+  category: number;
   candles: Candle[];
 }
 

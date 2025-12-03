@@ -10,7 +10,7 @@
   <app-search-filter (searchChange)="onFilterChange($event)"></app-search-filter>
 
   <!-- Заголовок -->
-  <h2 class="header-title">Coins {{ selectionCount() > 0 ? '(' + selectionCount() + ')' : '' }}</h2>
+  <h2 class="header-title">Working Coins {{ selectionCount() > 0 ? '(' + selectionCount() + ')' : '' }}</h2>
 
   <!-- Кнопки -->
   <div class="header-actions">
@@ -37,19 +37,19 @@
         <img src="assets/icons/bitcoin.svg" alt="BTC" class="svg-icon">
       </mat-icon>
     </button>
-    <button class="action-button" matRipple (click)="addToWork()">
-      <mat-icon>
-        <img src="assets/icons/hammer.svg" alt="BTC" class="svg-icon">
-      </mat-icon>
-    </button>
     <button class="action-button" matRipple (click)="sortOut()">
       <mat-icon [svgIcon]="sortIcon()"></mat-icon>
     </button>
     <button class="action-button" matRipple (click)="goToVwapAlertCharts()">
       <mat-icon>candlestick_chart</mat-icon>
     </button>
+
     <button class="action-button" matRipple (click)="goToLineAlertCharts()">
       <mat-icon>show_chart</mat-icon>
+    </button>
+
+    <button class="action-button" (click)="deleteSelected()" matRipple>
+      <mat-icon>delete</mat-icon>
     </button>
 
     <button class="action-button" (click)="closeWindows()" matRipple>

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+// 🚀 ИМПОРТ: Добавляем HttpParams
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
@@ -33,7 +34,18 @@ export class KlineDataApiService {
     const url = this.klineUrls[timeframe];
     const headers = this.createAuthHeaders();
 
-    return this.http.get<KlineApiResponse>(url, { headers });
+    // 🚀 ЛОГИКА: Добавляем параметры запроса
+    let params = new HttpParams();
+
+    // Если это 1-часовой таймфрейм, ставим лимит 600
+    if (timeframe === '1h') {
+      params = params.set('limit', '600');
+    }
+    // Для всех остальных таймфреймов limit не будет добавлен,
+    // и сервер использует свой лимит по умолчанию (400)
+
+    // 🚀 ИСПРАВЛЕНО: Добавляем { headers, params } в запрос
+    return this.http.get<KlineApiResponse>(url, { headers, params });
   }
 
   /**
@@ -45,6 +57,7 @@ export class KlineDataApiService {
     const url = `${baseUrl}/api/cache/all`;
     const headers = this.createAuthHeaders();
 
+    // (Здесь лимит не нужен, так как это 'all')
     return this.http.get<KlineApiAllResponse>(url, { headers });
   }
 

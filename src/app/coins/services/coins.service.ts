@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { CoinData } from '../../models/coin-data.model';
 // 🚀 ИСПРАВЛЕНИЕ: Путь к вашему интерфейсу (согласно coins.component.ts)
-import { WorkingCoin } from '../models/working-coin.model';
+import { WorkingCoin } from '../../shared/models/working-coin.model';
 import { KlineCacheService } from '../../shared/services/cache/kline-cache.service';
 import { KlineDataService } from '../../shared/services/kline-data.service';
 
