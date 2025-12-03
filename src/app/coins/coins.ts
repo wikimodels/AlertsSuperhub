@@ -22,6 +22,7 @@ import { MatRipple } from '@angular/material/core';
 import { NotificationService } from '../shared/services/notification.service';
 import { CoinWindowService } from '../shared/services/coin-window.service';
 import { WorkingCoinsApiService } from '../shared/services/api/working-coins-api.service';
+import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
 
 type SortMode = 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc';
 
@@ -37,7 +38,7 @@ type SortMode = 'name-asc' | 'name-desc' | 'category-asc' | 'category-desc';
     MatIconModule,
     MatButtonModule,
     SearchFilterComponent,
-    MatRipple,
+    PanelButtonComponent,
   ],
   templateUrl: './coins.html',
   styleUrls: ['./coins.scss'],

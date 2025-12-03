@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { VwapAlertChart } from './vwap-alert-chart';
+import { LineAlertChart } from './line-alert-chart';
 
-describe('VwapAlertChart', () => {
-  let component: VwapAlertChart;
-  let fixture: ComponentFixture<VwapAlertChart>;
+describe('LineAlertChart', () => {
+  let component: LineAlertChart;
+  let fixture: ComponentFixture<LineAlertChart>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VwapAlertChart]
+      imports: [LineAlertChart]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(VwapAlertChart);
+    fixture = TestBed.createComponent(LineAlertChart);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

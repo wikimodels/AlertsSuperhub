@@ -1,4 +1,5 @@
-<button class="action-button" matRipple [disabled]="disabled" (click)="onClick()" [title]="tooltipText">
+<button class="action-button" matRipple [disabled]="disabled" (click)="onClick()" [matTooltip]="tooltipText"
+  [matTooltipPosition]="'above'">
 
   @if (isSvgIcon()) {
   <mat-icon>

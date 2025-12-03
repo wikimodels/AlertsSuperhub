@@ -2,12 +2,13 @@
 export interface AlertBase {
   symbol: string;
   alertName: string;
-  action: string;
   price: number;
   description?: string;
   tvScreensUrls?: string[];
   exchanges: string[];
   category?: number;
+  color: string;
+  createdAt?: string;
 
   // Общие для всех алертов поля состояния
   _id?: string; // MongoDB _id (опционально, только при сохранении)
@@ -18,16 +19,11 @@ export interface AlertBase {
   highPrice?: number;
   lowPrice?: number;
   isActive: boolean;
-
-  // Дополнительные ссылки
-  tvLink?: string;
-  cgLink?: string;
+  imagesUrls?: string[];
 }
 
 // --- Line Alert: наследует всё от AlertBase ---
-export interface LineAlert extends AlertBase {
-  imagesUrls?: string[];
-}
+export interface LineAlert extends AlertBase {}
 
 // --- VWAP Alert: расширяет AlertBase специфичными полями ---
 export interface VwapAlert extends AlertBase {
@@ -35,10 +31,6 @@ export interface VwapAlert extends AlertBase {
   anchorTime?: number; // timestamp в миллисекундах
   anchorTimeStr?: string;
   anchorPrice?: number; // рассчитанный VWAP на момент активации
-  imageUrl?: string;
-
-  // Переопределяем price как опциональное, т.к. оно устанавливается при триггере
-  price: number; // цена срабатывания = anchorPrice
 }
 
 // --- Тип коллекции ---

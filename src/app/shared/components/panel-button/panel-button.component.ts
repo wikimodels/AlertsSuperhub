@@ -9,11 +9,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { MatRipple } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-panel-button',
   standalone: true,
-  imports: [CommonModule, MatRipple, MatIconModule],
+  imports: [CommonModule, MatRipple, MatIconModule, MatTooltip],
   templateUrl: './panel-button.component.html',
   styleUrls: ['./panel-button.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

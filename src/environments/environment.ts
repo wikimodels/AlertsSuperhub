@@ -7,6 +7,8 @@ const alertsHubUrl = 'http://localhost:8000';
 
 export const environment = {
   coinsUrl: coinSifterUrl + '/coins/filtered',
+  lineAlertsUrl: alertsHubUrl + '/api/alerts/line',
+  vwapAlertsUrl: alertsHubUrl + '/api/alerts/vwap',
   workingCoinsUrl: alertsHubUrl + '/api/coins/working',
   token: 'O0hrTGEd3meImdof/H0Hj2XOKuVgQAbr+D9w0DRZvtA=',
   klineDataUrls: {

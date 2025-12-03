@@ -16,6 +16,8 @@
       [tooltipText]="'Открыть CoinGlass'"></app-panel-button>
     <app-panel-button [iconPath]="'assets/icons/bitcoin.svg'" (actionClick)="openBitcoinChart()"
       [tooltipText]="'График BTC на TradingView'"></app-panel-button>
+    <app-panel-button (click)="goToVwapAlertCharts()" [iconPath]="'candlestick_chart'" [tooltipText]="'VWAP Alerts'">
+    </app-panel-button>
     <app-panel-button [iconPath]="'close'" (actionClick)="closeWindows()"
       [tooltipText]="'Закрыть все окна'"></app-panel-button>
   </div>

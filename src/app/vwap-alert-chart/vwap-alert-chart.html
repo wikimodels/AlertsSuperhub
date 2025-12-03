@@ -1,1 +1,38 @@
-<p>vwap-alert-chart works!</p>
+<div class="coins-header" [class.is-hidden]="isLoading()">
+  <div class="header-spacer-left"></div>
+
+  <!-- Логотип + Заголовок (по центру) -->
+  <div class="header-title-container">
+    <!-- <img [src]="'assets/logo/' + symbol().toLowerCase() + '.svg'" [alt]="symbol()" class="coin-logo"
+      (error)="onLogoError($event)" /> -->
+    <h2 class="header-title">VWAP Alerts {{ symbol() }}({{ category() }})</h2>
+  </div>
+
+  <!-- Кнопки действий -->
+  <div class="header-actions">
+    <app-panel-button [iconPath]="'assets/icons/tv.svg'" (actionClick)="openTradingView()"
+      [tooltipText]="'Открыть TradingView'"></app-panel-button>
+    <app-panel-button [iconPath]="'assets/icons/cg.svg'" (actionClick)="openCoinGlass()"
+      [tooltipText]="'Открыть CoinGlass'"></app-panel-button>
+    <app-panel-button [iconPath]="'assets/icons/bitcoin.svg'" (actionClick)="openBitcoinChart()"
+      [tooltipText]="'График BTC на TradingView'"></app-panel-button>
+
+    <app-panel-button (click)="goToLineAlertCharts()" [iconPath]="'show_chart'" [tooltipText]="'Line Alerts'">
+    </app-panel-button>
+
+    <app-panel-button [iconPath]="'close'" (actionClick)="closeWindows()"
+      [tooltipText]="'Закрыть все окна'"></app-panel-button>
+  </div>
+</div>
+
+<!-- Контейнер графика -->
+<div class="chart-content" [class.is-hidden]="isLoading()">
+  <div #chartContainer class="chart-container-wrapper"></div>
+</div>
+
+<!-- Лоадер -->
+@if (isLoading()) {
+<div class="chart-loading-overlay">
+  <app-loading-spinner></app-loading-spinner>
+</div>
+}

@@ -32,18 +32,12 @@ import {
 } from 'lightweight-charts';
 import { ChartDataService } from '../shared/services/chart-data.service';
 import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
-import { LineAlert } from '../models/alerts';
+import { ChartLineObject } from '../models/chart-line-object';
+import { createLineAlertFromLine } from './functions/create-line-alert';
+import { LineAlertsApiService } from '../shared/services/api/line-alerts-api.service'; // ← NEW
 
 interface OHLCVData extends CandlestickData {
   volume: number;
-}
-
-interface ChartLineObject {
-  id: string;
-  price: number;
-  series: ISeriesApi<'Line'>;
-  color: string;
-  createdAt: string;
 }
 
 @Component({
@@ -51,12 +45,13 @@ interface ChartLineObject {
   standalone: true,
   imports: [CommonModule, LoadingSpinnerComponent, PanelButtonComponent],
   templateUrl: './line-alert-chart.html',
-  styleUrls: ['./line-alert-chart.scss'],
+  styleUrls: ['../../app/shared/styles/chart-layout.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LineAlertChart implements AfterViewInit, OnDestroy {
   public isLoading = signal(true);
   private chartDataService = inject(ChartDataService);
+  private lineAlertsApiService = inject(LineAlertsApiService); // ← NEW
   private route = inject(ActivatedRoute);
   private zone = inject(NgZone);
   private coinWindowService = inject(CoinWindowService);
@@ -64,7 +59,6 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
   private queryParams = toSignal(this.route.queryParamMap);
   public symbol = computed(() => this.queryParams()?.get('symbol') ?? '');
 
-  // ✅ Signals to hold real category/exchanges from API
   public category = signal<number>(0);
   public exchanges = signal<string[]>(['BYBIT']);
 
@@ -78,7 +72,10 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
 
   private candleData: CandlestickData[] = [];
   private horizontalLines: ChartLineObject[] = [];
-  private lineColors = ['#2962FF', '#F23645', '#089981', '#FF6D00', '#7C4DFF'];
+  private lineColors = ['#90EE90', '#FF0000', '#FFA500', '#800080'];
+
+  // ← NEW: Map для связи ChartLineObject.id → LineAlert.id (UUID из БД)
+  private lineToAlertIdMap = new Map<string, string>();
 
   constructor() {
     effect(() => {
@@ -217,7 +214,6 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
       this.volumeSeries.setData([]);
       this.candleData = [];
 
-      // Fallback values
       this.zone.run(() => {
         this.category.set(0);
         this.exchanges.set(['BYBIT']);
@@ -225,7 +221,6 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     } else {
       const { chartFormattedData, category, exchanges } = response;
 
-      // ✅ Store real values from API
       this.zone.run(() => {
         this.category.set(category);
         this.exchanges.set(exchanges);
@@ -251,6 +246,9 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
       this.candleSeries.setData(candleData);
       this.volumeSeries.setData(volumeData);
       this.chartApi.timeScale().fitContent();
+
+      // ✅ NEW: Загружаем существующие алерты после загрузки свечей
+      await this.loadHorizontalLines(symbol);
     }
 
     this.zone.run(() => this.isLoading.set(false));
@@ -269,6 +267,64 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
   }
 
   // ============================================
+  // ✅ NEW: Load Existing Alerts from API
+  // ============================================
+
+  private async loadHorizontalLines(symbol: string): Promise<void> {
+    if (!this.chartApi || this.candleData.length === 0) return;
+
+    try {
+      console.log(`[Chart] 📥 Загрузка существующих алертов для ${symbol}...`);
+
+      const allAlerts = await this.lineAlertsApiService.getAllAlertsAsync();
+
+      // Фильтруем алерты только для текущего символа
+      const symbolAlerts = allAlerts.filter((alert) => alert.symbol === symbol);
+
+      console.log(`[Chart] Найдено ${symbolAlerts.length} алертов для ${symbol}`);
+
+      // Отрисовываем каждый алерт на графике
+      for (const alert of symbolAlerts) {
+        const color = this.lineColors[this.horizontalLines.length % this.lineColors.length];
+        const lineId = this.generateLineId();
+
+        const lineData = this.candleData.map((candle) => ({
+          time: candle.time,
+          value: alert.price,
+        }));
+
+        const lineSeries = this.chartApi!.addSeries(LineSeries, {
+          color,
+          lineWidth: 2,
+          lineStyle: LineStyle.Dotted,
+          lastValueVisible: true,
+          priceLineVisible: false,
+          crosshairMarkerVisible: true,
+        });
+
+        lineSeries.setData(lineData);
+
+        const lineObject: ChartLineObject = {
+          id: lineId,
+          price: alert.price,
+          series: lineSeries,
+          color,
+          createdAt: alert.createdAt || new Date().toISOString(),
+        };
+
+        this.horizontalLines.push(lineObject);
+
+        // ✅ Связываем локальный lineId с UUID из БД
+        this.lineToAlertIdMap.set(lineId, alert.id);
+
+        console.log(`✅ Алерт загружен: ${alert.alertName || alert.symbol} @ ${alert.price}`);
+      }
+    } catch (error) {
+      console.error('[Chart] ❌ Ошибка загрузки алертов:', error);
+    }
+  }
+
+  // ============================================
   // Horizontal Line / Alert Management
   // ============================================
 
@@ -281,7 +337,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
       const clickedPrice = this.candleSeries.coordinateToPrice(param.point.y);
       if (clickedPrice === null || clickedPrice === undefined) return;
 
-      this.zone.run(() => {
+      this.zone.run(async () => {
         let clickedOnLine = false;
 
         for (let i = this.horizontalLines.length - 1; i >= 0; i--) {
@@ -290,7 +346,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
 
           if (Math.abs(clickedPrice - lineObj.price) <= tolerance) {
             console.log(`🎯 Клик на существующую линию ID: ${lineObj.id}`);
-            this.removeHorizontalLine(lineObj, i);
+            await this.removeHorizontalLine(lineObj, i);
             clickedOnLine = true;
             break;
           }
@@ -298,17 +354,16 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
 
         if (!clickedOnLine) {
           console.log('🎯 Добавляем новую линию...');
-          this.addHorizontalLine(clickedPrice);
+          await this.addHorizontalLine(clickedPrice);
         }
       });
     });
 
-    console.log(
-      '[Chart] 💡 Подписка на клики установлена. Кликни на график, чтобы добавить алерт.'
-    );
+    console.log('[Chart] 💡 Подписка на клики установлена.');
   }
 
-  private addHorizontalLine(price: number): void {
+  // ✅ UPDATED: Save to API
+  private async addHorizontalLine(price: number): Promise<void> {
     if (!this.chartApi || this.candleData.length === 0) return;
 
     const color = this.lineColors[this.horizontalLines.length % this.lineColors.length];
@@ -322,7 +377,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     const lineSeries = this.chartApi.addSeries(LineSeries, {
       color,
       lineWidth: 2,
-      lineStyle: LineStyle.Dashed,
+      lineStyle: LineStyle.Dotted,
       lastValueVisible: true,
       priceLineVisible: false,
       crosshairMarkerVisible: true,
@@ -339,28 +394,78 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     };
 
     this.horizontalLines.push(lineObject);
-    const newAlert = this.createLineAlertFromLine(lineObject);
-    console.log('%c✅ СОЗДАН LineAlert:', 'color: green; font-weight: bold;', newAlert);
+
+    // ✅ Создаём LineAlert и сохраняем в БД
+    const newAlert = createLineAlertFromLine(
+      this.symbol(),
+      this.exchanges(),
+      this.category(),
+      lineObject
+    );
+
+    try {
+      const success = await this.lineAlertsApiService.addAlertAsync(newAlert);
+
+      if (success) {
+        // ✅ Связываем локальный lineId с UUID из БД
+        // Нужно получить ID из ответа API (если возвращается)
+        // Для упрощения используем newAlert.id (который был сгенерирован локально)
+        this.lineToAlertIdMap.set(lineId, newAlert.id);
+        console.log('%c✅ СОЗДАН LineAlert:', 'color: green; font-weight: bold;', newAlert);
+      }
+    } catch (error) {
+      console.error('[Chart] ❌ Ошибка сохранения алерта:', error);
+      // Откатываем изменения на графике
+      this.chartApi.removeSeries(lineSeries);
+      const index = this.horizontalLines.indexOf(lineObject);
+      if (index > -1) {
+        this.horizontalLines.splice(index, 1);
+      }
+    }
   }
 
-  private removeHorizontalLine(lineObject: ChartLineObject, index: number): void {
+  // ✅ UPDATED: Delete from API
+  private async removeHorizontalLine(lineObject: ChartLineObject, index: number): Promise<void> {
     if (!this.chartApi) return;
+
+    // ✅ Получаем UUID алерта из БД
+    const alertId = this.lineToAlertIdMap.get(lineObject.id);
+
+    if (alertId) {
+      try {
+        await this.lineAlertsApiService.deleteAlertAsync(alertId);
+        console.log('%c🗑️ УДАЛЁН LineAlert:', 'color: red; font-weight: bold;', alertId);
+
+        // Удаляем из маппинга
+        this.lineToAlertIdMap.delete(lineObject.id);
+      } catch (error) {
+        console.error('[Chart] ❌ Ошибка удаления алерта:', error);
+        return; // Не удаляем с графика если API упал
+      }
+    }
+
+    // Удаляем с графика
     this.chartApi.removeSeries(lineObject.series);
     this.horizontalLines.splice(index, 1);
-
-    const deletedAlert = this.createLineAlertFromLine(lineObject);
-    console.log('%c🗑️ УДАЛЕН LineAlert:', 'color: red; font-weight: bold;', deletedAlert);
   }
 
   private clearAllLines(): void {
     if (!this.chartApi) return;
-    [...this.horizontalLines].forEach((lineObj) => {
+
+    // Копируем массив для безопасной итерации
+    const linesToRemove = [...this.horizontalLines];
+
+    linesToRemove.forEach((lineObj) => {
       const realIndex = this.horizontalLines.indexOf(lineObj);
       if (realIndex > -1) {
-        this.removeHorizontalLine(lineObj, realIndex);
+        // Удаляем с графика (без вызова API - это локальная очистка)
+        this.chartApi!.removeSeries(lineObj.series);
+        this.horizontalLines.splice(realIndex, 1);
       }
     });
+
     this.horizontalLines = [];
+    this.lineToAlertIdMap.clear();
     console.log('[Chart] Все горизонтальные линии очищены.');
   }
 
@@ -368,23 +473,10 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     return `hline_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
   }
 
-  private createLineAlertFromLine(lineObject: ChartLineObject): LineAlert {
-    return {
-      symbol: this.symbol(),
-      alertName: `Line Alert @ ${lineObject.price.toFixed(4)}`,
-      action: 'cross',
-      price: lineObject.price,
-      description: `Chart Line Color: ${lineObject.color}`,
-      exchanges: this.exchanges(), // ✅ Real value
-      category: this.category(), // ✅ Real value
-      id: lineObject.id,
-      creationTime: new Date(lineObject.createdAt).getTime(),
-      isActive: true,
-      imagesUrls: [],
-    };
+  goToVwapAlertCharts(): void {
+    this.coinWindowService.openVwapAlertCharts(this.getCurrentCoinAsArray());
   }
 
-  // Метод для обработки ошибки загрузки логотипа
   onLogoError(event: any): void {
     const img = event.target as HTMLImageElement;
     img.src = 'assets/logo/no-name.svg';
