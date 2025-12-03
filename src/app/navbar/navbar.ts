@@ -2,7 +2,9 @@ import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
+import { VwapAlertMenuComponent } from './vwap-alert-menu/vwap-alert-menu.component';
+import { LineAlertMenuComponent } from './line-alert-menu/line-alert-menu.component';
 
 @Component({
   selector: 'app-navbar',
@@ -10,7 +12,9 @@ import { Router, RouterLink } from '@angular/router';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    RouterLink, // Only import Router for navigation
+    RouterLink,
+    VwapAlertMenuComponent,
+    LineAlertMenuComponent,
   ],
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.scss'],

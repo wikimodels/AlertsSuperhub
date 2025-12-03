@@ -27,4 +27,11 @@ export const routes: Routes = [
     // Компонент загрузится, только когда пользователь перейдет на /coins
     loadComponent: () => import('./working-coins/working-coins').then((m) => m.WorkingCoins),
   },
+  {
+    path: 'working-line-alerts',
+    // Ленивая загрузка (Lazy Loading):
+    // Компонент загрузится, только когда пользователь перейдет на /coins
+    loadComponent: () =>
+      import('./working-line-alerts/working-line-alerts').then((m) => m.WorkingLineAlerts),
+  },
 ];
