@@ -9,9 +9,9 @@ export function createLineAlertFromLine(
 ): LineAlert {
   return {
     symbol: symbol,
-    alertName: `{this.symbol()} @ ${lineObject.price.toFixed(4)}`,
+    alertName: `${symbol} @ ${lineObject.price.toFixed(4)}`,
     price: lineObject.price,
-    description: `Alert is triggered at ${lineObject.price.toFixed(4)}`,
+    description: `Alert is created at ${lineObject.price.toFixed(4)}`,
     exchanges: exchanges, // ✅ Real value
     category: category, // ✅ Real value
     id: lineObject.id,

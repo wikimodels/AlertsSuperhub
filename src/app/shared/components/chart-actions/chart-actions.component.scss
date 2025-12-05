@@ -1,0 +1,64 @@
+:host {
+  display: block;
+}
+
+.coin-links {
+  display: flex;
+  align-items: center;
+  /* 🚀 ИЗМЕНЕНО: Синхронизация с links (было 6px, стало 4px + padding) */
+  gap: 4px;
+  padding: 0 4px;
+}
+
+/* Контейнер: Черный круг (1-в-1 из links) */
+.circle-btn {
+  width: 28px;
+  height: 28px;
+  background-color: #000000;
+  border-radius: 50%;
+  /* 🚀 ИЗМЕНЕНО: Рамка точно такая же, как в links */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Иконка внутри (MatIcon) */
+.circle-btn mat-icon {
+  /* 🚀 ИЗМЕНЕНО: Размер увеличен до 18px (как у картинок в links), было 14px */
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+
+  color: #ffffff;
+  /* 🚀 ИЗМЕНЕНО: Прозрачность 0.6 как в links */
+  opacity: 0.7;
+  /* 🚀 ИЗМЕНЕНО: Полный набор транзишенов */
+  transition: transform 0.2s ease, opacity 0.2s, filter 0.2s;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Эффекты при наведении (1-в-1 из links) */
+.circle-btn:hover {
+  transform: scale(1.00);
+  background-color: #222;
+
+}
+
+.circle-btn:hover mat-icon {
+  opacity: 1;
+  transform: scale(1.1);
+  filter: brightness(1.3);
+}
+
+/* Active state можно оставить, он не мешает, но в links его нет */
+.circle-btn:active {
+  transform: scale(0.95);
+}

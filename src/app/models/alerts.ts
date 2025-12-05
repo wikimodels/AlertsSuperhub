@@ -20,6 +20,7 @@ export interface AlertBase {
   lowPrice?: number;
   isActive: boolean;
   imagesUrls?: string[];
+  logoUrl?: string;
 }
 
 // --- Line Alert: наследует всё от AlertBase ---
@@ -33,5 +34,17 @@ export interface VwapAlert extends AlertBase {
   anchorPrice?: number; // рассчитанный VWAP на момент активации
 }
 
-// --- Тип коллекции ---
-export type AlertsCollection = 'working' | 'triggered' | 'archived';
+export enum AlertsCollection {
+  Working = 'working',
+  Triggered = 'triggered',
+  Archived = 'archived',
+}
+
+// 🧠 SMART TYPES
+export type AlertType = 'line' | 'vwap';
+export type AlertStatus = 'working' | 'archived' | 'triggered';
+
+// Хелпер для проверки типов (для бэкенда)
+export const isAlertType = (x: string): x is AlertType => ['line', 'vwap'].includes(x);
+export const isAlertStatus = (x: string): x is AlertStatus =>
+  ['working', 'archived', 'triggered'].includes(x);

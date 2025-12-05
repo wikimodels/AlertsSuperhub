@@ -1,0 +1,29 @@
+<div class="carousel-wrapper">
+  <div class="scroller" #scroller (scroll)="onScroll(scroller)">
+    <div class="slide" *ngFor="let img of images; let i = index" [id]="'slide-' + i">
+      <img [src]="img" loading="lazy" alt="Chart screenshot">
+    </div>
+
+    <div class="slide empty" *ngIf="images.length === 0">
+      <div class="no-image">No images available</div>
+    </div>
+  </div>
+
+  <div class="controls-layer" *ngIf="images.length > 1">
+
+    <button class="nav-btn prev" (click)="navigate(scroller, -1)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+
+    <button class="nav-btn next" (click)="navigate(scroller, 1)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+
+    <div class="dots">
+      <div *ngFor="let img of images; let i = index" class="dot" [class.active]="activeSlide() === i"
+        (click)="scrollToIndex(scroller, i)">
+      </div>
+    </div>
+
+  </div>
+</div>

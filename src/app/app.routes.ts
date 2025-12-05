@@ -34,4 +34,18 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./working-line-alerts/working-line-alerts').then((m) => m.WorkingLineAlerts),
   },
+  {
+    path: 'triggered-line-alerts',
+    // Ленивая загрузка (Lazy Loading):
+    // Компонент загрузится, только когда пользователь перейдет на /coins
+    loadComponent: () =>
+      import('./triggered-line-alerts/triggered-line-alerts').then((m) => m.TriggeredLineAlerts),
+  },
+  {
+    path: 'archived-line-alerts',
+    // Ленивая загрузка (Lazy Loading):
+    // Компонент загрузится, только когда пользователь перейдет на /coins
+    loadComponent: () =>
+      import('./archived-line-alerts/archived-line-alerts').then((m) => m.ArchivedLineAlerts),
+  },
 ];

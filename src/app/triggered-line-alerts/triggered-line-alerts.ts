@@ -6,13 +6,15 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-// 1. Импорт модуля переключателя
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 
+// UPDATED: Added AlertsCollection to imports
 import { LineAlert, AlertsCollection } from '../models/alerts';
 import { LoadingSpinnerComponent } from '../shared/components/loading-spinner/loading-spinner.component';
 import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
+
+// 🚀 CHANGE #1: Import Universal Service
 import { UniversalAlertsApiService } from '../shared/services/api/universal-alerts-api.service';
+
 import { SearchFilterComponent } from '../shared/components/search-filter/search-filter.component';
 import { LinksComponent } from '../shared/components/links/links.component';
 import { ChartActionsComponent } from '../shared/components/chart-actions/chart-actions.component';
@@ -21,7 +23,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ScrollResetDirective } from '../directives/scroll-reset.directive';
 
 @Component({
-  selector: 'app-working-line-alerts',
+  selector: 'app-triggered-line-alerts', // 🚀 FIXED: Selector name to match component
   standalone: true,
   imports: [
     CommonModule,
@@ -37,32 +39,49 @@ import { ScrollResetDirective } from '../directives/scroll-reset.directive';
     MatSortModule,
     MatButtonModule,
     MatCheckboxModule,
-    // 2. Добавляем модуль сюда
-    MatSlideToggleModule,
   ],
-  templateUrl: './working-line-alerts.html',
-  styleUrl: './working-line-alerts.scss',
+  templateUrl: './triggered-line-alerts.html',
+  styleUrl: './triggered-line-alerts.scss',
 })
-export class WorkingLineAlerts implements OnInit {
+export class TriggeredLineAlerts implements OnInit {
+  // 🚀 CHANGE #2: Inject Universal Service
   private api = inject(UniversalAlertsApiService);
+
   public selectionService = inject(GenericSelectionService<LineAlert>);
 
+  // ✅ Реактивные данные
   private selectionSignal = toSignal(this.selectionService.selectionChanges$, {
     initialValue: [],
   });
 
+  // Signals
   isLoading = signal<boolean>(true);
   alertsCount = signal<number>(0);
 
+  // 1. DATA SOURCE
   dataSource = new MatTableDataSource<LineAlert>([]);
-  displayedColumns: string[] = ['symbol', 'alertName', 'isActive', 'links', 'actions', 'checkbox'];
 
+  // 2. COLUMNS
+  displayedColumns: string[] = [
+    'symbol',
+    'alertName',
+    'activationTime',
+    'links',
+    'actions',
+    'checkbox',
+  ];
+
+  // 3. VIEW CHILD SETTERS
   @ViewChild(MatPaginator) set paginator(pager: MatPaginator) {
-    if (pager) this.dataSource.paginator = pager;
+    if (pager) {
+      this.dataSource.paginator = pager;
+    }
   }
 
   @ViewChild(MatSort) set sort(sorter: MatSort) {
-    if (sorter) this.dataSource.sort = sorter;
+    if (sorter) {
+      this.dataSource.sort = sorter;
+    }
   }
 
   constructor() {
@@ -79,7 +98,9 @@ export class WorkingLineAlerts implements OnInit {
   async loadAlerts() {
     this.isLoading.set(true);
     try {
-      const data = await this.api.getAlertsAsync<LineAlert>('line', 'working');
+      // 🚀 CHANGE #3: Fetch ('line', 'triggered')
+      const data = await this.api.getAlertsAsync<LineAlert>('line', 'triggered');
+
       this.dataSource.data = data;
       this.alertsCount.set(data.length);
       this.selectionService.clear();
@@ -102,6 +123,8 @@ export class WorkingLineAlerts implements OnInit {
     this.alertsCount.set(this.dataSource.filteredData.length);
   }
 
+  // --- SELECTION LOGIC ---
+
   isAllSelected() {
     const numSelected = this.selectionService.selectedValues().length;
     const numRows = this.dataSource.data.length;
@@ -119,85 +142,71 @@ export class WorkingLineAlerts implements OnInit {
   }
 
   getSelectAllIcon(): string {
-    if (this.isAllSelected()) return 'check_box';
-    if (this.hasSelection()) return 'indeterminate_check_box';
+    if (this.isAllSelected()) {
+      return 'check_box';
+    }
+    if (this.hasSelection()) {
+      return 'indeterminate_check_box';
+    }
     return 'check_box_outline_blank';
   }
 
-  // 3. Логика переключения (Toggle Logic)
-  async toggleActiveState(alert: LineAlert, event: MatSlideToggleChange) {
-    // event.stopPropagation() здесь НЕ НУЖЕН и вызывает ошибку.
-    // Остановка всплытия клика обрабатывается в HTML через (click)="$event.stopPropagation()"
-
-    const newValue = event.checked;
-    const previousValue = !newValue;
-
-    // 0. Защита: проверяем ID
-    if (!alert.id) {
-      console.error('❌ Ошибка: У алерта нет ID!', alert);
-      // Откат UI: меняем состояние свитча обратно
-      event.source.checked = previousValue;
-      return;
-    }
-
-    // Оптимистичное обновление модели
-    alert.isActive = newValue;
-    console.log(`🔄 Sending Update: ID=${alert.id}, isActive=${newValue}`);
-
-    try {
-      const success = await this.api.updateAlertAsync('line', 'working', alert.id, {
-        isActive: newValue,
-      });
-
-      if (!success) {
-        console.warn('⚠️ API вернул false (не обновлено)');
-        // Откат при ошибке API
-        alert.isActive = previousValue;
-        event.source.checked = previousValue;
-      } else {
-        console.log('✅ Успешно обновлено в БД');
-      }
-    } catch (err) {
-      // Откат при исключении
-      alert.isActive = previousValue;
-      event.source.checked = previousValue;
-      console.error('❌ Failed to update active state', err);
-    }
-  }
+  // --- ACTIONS ---
 
   async deleteSelected() {
     const selected = this.selectionService.selectedValues();
     if (selected.length === 0) return;
+
+    // Use 'id' (UUID) instead of '_id' (ObjectId)
     const ids = selected.map((a) => a.id).filter((id): id is string => !!id);
+
     if (ids.length === 0) return;
 
-    const deletedCount = await this.api.deleteAlertsBatchAsync('line', 'working', ids);
+    // 🚀 CHANGE #4: Delete from ('line', 'triggered')
+    const deletedCount = await this.api.deleteAlertsBatchAsync('line', 'triggered', ids);
 
     if (deletedCount > 0) {
       const deletedIdsSet = new Set(ids);
       const newData = this.dataSource.data.filter((a) => !deletedIdsSet.has(a.id!));
+
       this.dataSource.data = newData;
       this.alertsCount.set(newData.length);
       this.selectionService.clear();
     }
   }
 
+  // 🚀 CHANGE #5: Move FROM 'triggered' TO 'archived'
   async moveToArchive() {
     const selected = this.selectionService.selectedValues();
     if (selected.length === 0) return;
+
     const ids = selected.map((a) => a.id).filter((id): id is string => !!id);
     if (ids.length === 0) return;
 
-    const movedCount = await this.api.moveAlertsAsync('line', 'working', 'archived', ids);
+    // Using new Universal Service method
+    const movedCount = await this.api.moveAlertsAsync(
+      'line', // Type
+      'triggered', // From
+      'archived', // To
+      ids
+    );
 
     if (movedCount > 0) {
+      // Remove moved items from the current table
       const movedIdsSet = new Set(ids);
       const newData = this.dataSource.data.filter((a) => !movedIdsSet.has(a.id!));
+
       this.dataSource.data = newData;
       this.alertsCount.set(newData.length);
       this.selectionService.clear();
     }
   }
+
+  /* // Optional: Reactivate Alert (Triggered -> Working)
+  async reactivateSelected() {
+    // ... similar logic but to: 'working'
+  }
+  */
 
   refresh() {
     this.loadAlerts();

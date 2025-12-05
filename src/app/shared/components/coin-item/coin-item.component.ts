@@ -1,41 +1,41 @@
 import { Component, inject, ChangeDetectionStrategy, computed, input } from '@angular/core';
-// 🚀 ДОБАВЛЕНО:
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-// ❌ "SHIT" УДАЛЕН (как и в прошлый раз)
-// import { MatButtonModule } from '@angular/material/button';
-// import { MatIconModule } from '@angular/material/icon';
-// import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatRipple } from '@angular/material/core';
+// 🚀 ДОБАВЛЕНО: Dialog Module и компонент
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+
 import { WorkingCoin } from '../../models/working-coin.model';
 import { CoinLinksService } from '../../services/coin-links.service';
 import { GenericSelectionService } from '../../services/generic.selection.service';
 import { LinksComponent } from '../links/links.component';
-import { MatRipple } from '@angular/material/core';
+import { NewLineAlert } from '../../../new-line-alert/new-line-alert';
 
 @Component({
   selector: 'app-coin-item',
   standalone: true,
-  imports: [CommonModule, MatRipple, LinksComponent],
+  imports: [
+    CommonModule,
+    MatRipple,
+    LinksComponent,
+    // 🚀 ДОБАВЛЕНО:
+    MatDialogModule,
+  ],
   templateUrl: './coin-item.component.html',
   styleUrls: ['./coin-item.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CoinItemComponent {
-  // --- Внедрение сервисов ---
   private linksService = inject(CoinLinksService);
-  // 🚀 ДОБАВЛЕНО: Внедрение сервиса выбора
   private selectionService = inject(GenericSelectionService<WorkingCoin>);
+  // 🚀 ДОБАВЛЕНО: Inject Dialog
+  private dialog = inject(MatDialog);
 
-  // --- Входные данные ---
   coin = input.required<WorkingCoin>();
 
-  // --- 🚀 ДОБАВЛЕНО: Реактивное состояние выбора ---
-  // 1. Конвертируем Observable в Signal
   private selectionSignal = toSignal(this.selectionService.selectionChanges$, { initialValue: [] });
-  // 2. Вычисляем, выбрана ли *эта* монета
   public isSelected = computed(() => this.selectionSignal().includes(this.coin()));
 
-  // --- Производные сигналы для ссылок (БЕЗ ИЗМЕНЕНИЙ) ---
   tvLink = computed(() =>
     this.linksService.tradingViewLink(this.coin().symbol, this.coin().exchanges)
   );
@@ -53,47 +53,43 @@ export class CoinItemComponent {
   tvLogo = computed(() => 'assets/icons/tv.svg');
   cgLogo = computed(() => 'assets/icons/coinglass.svg');
 
-  /**
-   * Обработчик ошибок для <img ngSrc> (БЕЗ ИЗМЕНЕНИЙ)
-   */
   public onImageError(event: Event) {
     const element = event.target as HTMLImageElement;
     element.src = 'assets/logo/no-name.svg';
   }
 
-  // --- 🚀 ДОБАВЛЕНО: Клик по всей капсуле ---
   public onPillClick(): void {
-    // Переключаем состояние в *общем* сервисе
     this.selectionService.toggle(this.coin());
   }
 
-  // --- 🚀 ИЗМЕНЕНО: Методы кликов по иконкам теперь останавливают всплытие ---
+  // 🚀 НОВЫЙ МЕТОД: Открытие диалога при клике на лого
+  public clickLogo(event: MouseEvent): void {
+    event.stopPropagation(); // Не выделять строку
+
+    this.dialog.open(NewLineAlert, {
+      width: '500px',
+      data: { coin: this.coin() },
+      panelClass: 'custom-dialog-container', // Опционально для глобальных стилей
+    });
+  }
 
   public clickBinance(event: MouseEvent): void {
-    event.stopPropagation(); // ❗️ Предотвращаем клик по капсуле
-    if (this.binanceLink()) {
-      window.open(this.binanceLink(), '_blank');
-    }
+    event.stopPropagation();
+    if (this.binanceLink()) window.open(this.binanceLink(), '_blank');
   }
 
   public clickBybit(event: MouseEvent): void {
-    event.stopPropagation(); // ❗️ Предотвращаем клик по капсуле
-    if (this.bybitLink()) {
-      window.open(this.bybitLink(), '_blank');
-    }
+    event.stopPropagation();
+    if (this.bybitLink()) window.open(this.bybitLink(), '_blank');
   }
 
   public clickTv(event: MouseEvent): void {
-    event.stopPropagation(); // ❗️ Предотвращаем клик по капсуле
-    if (this.tvLink()) {
-      window.open(this.tvLink(), '_blank');
-    }
+    event.stopPropagation();
+    if (this.tvLink()) window.open(this.tvLink(), '_blank');
   }
 
   public clickCg(event: MouseEvent): void {
-    event.stopPropagation(); // ❗️ Предотвращаем клик по капсуле
-    if (this.cgLink()) {
-      window.open(this.cgLink(), '_blank');
-    }
+    event.stopPropagation();
+    if (this.cgLink()) window.open(this.cgLink(), '_blank');
   }
 }

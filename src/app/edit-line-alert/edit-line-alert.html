@@ -1,0 +1,52 @@
+<div class="dialog-container">
+
+  <div class="dialog-header">
+    <img [src]="'assets/logo/' + alert.symbol.toLowerCase() + '.svg'" (error)="onLogoError($event)" [alt]="alert.symbol"
+      class="header-logo">
+    <h2>Edit Alert: <span class="accent">{{ alert.symbol }}</span></h2>
+  </div>
+
+  <form [formGroup]="form" class="alert-form">
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="compact-field">
+        <mat-label>Price (Read-only)</mat-label>
+        <input matInput type="number" formControlName="price">
+      </mat-form-field>
+
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="3" cdkFocusInitial></textarea>
+    </mat-form-field>
+
+    <div class="images-section" formArrayName="tvScreensUrls">
+      <div class="images-header">
+        <span class="label">Image Links</span>
+        <button mat-icon-button color="accent" (click)="addLink()" matTooltip="Add Image Link">
+          <mat-icon>add_circle</mat-icon>
+        </button>
+      </div>
+
+      <div *ngFor="let link of imagesArray.controls; let i = index" class="link-row">
+        <mat-form-field appearance="outline" class="full-width dense-field">
+          <mat-label>URL {{ i + 1 }}</mat-label>
+          <input matInput [formControlName]="i">
+        </mat-form-field>
+        <button mat-icon-button color="warn" (click)="removeLink(i)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+  <div class="dialog-actions">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="form.invalid || form.pristine">
+      Save Changes
+    </button>
+  </div>
+
+</div>

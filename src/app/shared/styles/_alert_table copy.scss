@@ -161,7 +161,7 @@
     }
 
     ::ng-deep .mat-mdc-slide-toggle .mdc-switch {
-      width: 65px !important;
+      width: 75px !important;
       height: 24px !important;
       position: relative !important;
     }
@@ -191,7 +191,7 @@
 
     ::ng-deep .mat-mdc-slide-toggle.mdc-switch--checked .mdc-switch__handle-track,
     ::ng-deep .mdc-switch.mdc-switch--checked .mdc-switch__handle-track {
-      transform: translateX(17px) !important;
+      transform: translateX(27px) !important;
     }
 
     ::ng-deep .mat-mdc-slide-toggle .mdc-switch__handle {
@@ -204,19 +204,6 @@
     ::ng-deep .mat-mdc-slide-toggle .mdc-switch__shadow {
       width: 24px !important;
       height: 24px !important;
-    }
-
-    ::ng-deep .mat-mdc-slide-toggle .mdc-switch__icons {
-      width: 24px !important;
-      height: 24px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-
-    ::ng-deep .mat-mdc-slide-toggle .mdc-switch__icon {
-      width: 16px !important;
-      height: 16px !important;
     }
 
     ::ng-deep .mat-mdc-slide-toggle .mdc-switch__ripple {

@@ -1,0 +1,33 @@
+<div class="details-container">
+
+  <div class="details-header">
+
+    <div class="header-left">
+      <img [src]="'assets/logo/' + (data.alert.symbol || '').toLowerCase() + '.svg'" (error)="onLogoError($event)"
+        alt="logo" class="coin-logo">
+      <div class="title-group">
+        <h2>{{ data.alert.symbol }}</h2>
+        <span class="subtitle">DETAILS</span>
+      </div>
+    </div>
+
+    <div class="header-divider"></div>
+
+    <div class="header-description">
+      <span class="desc-label">Note:</span>
+      <p class="desc-text">
+        {{ data.alert.description || 'No description provided.' }}
+      </p>
+    </div>
+
+    <button mat-icon-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="details-gallery">
+    <app-simple-carousel [images]="data.alert.tvScreensUrls || []">
+    </app-simple-carousel>
+  </div>
+
+</div>

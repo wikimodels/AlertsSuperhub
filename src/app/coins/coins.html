@@ -16,6 +16,7 @@
       (actionClick)="toggleSelectAll()" [tooltipText]="hasSelection() ? 'Снять выделение' : 'Выбрать все'"
       [disabled]="!hasSelection()">
     </app-panel-button>
+
     <app-panel-button [iconPath]="'assets/icons/tv.svg'" (actionClick)="openTradingView()"
       [tooltipText]="'Открыть TradingView'">
     </app-panel-button>

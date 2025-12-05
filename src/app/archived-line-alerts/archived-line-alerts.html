@@ -10,7 +10,7 @@
     <app-search-filter (searchChange)="onFilterChange($event)"></app-search-filter>
 
     <h2 class="header-title">
-      Working Line Alerts
+      Archived Line Alerts
       @if (alertsCount() > 0) {
       <span>({{ alertsCount() }})</span>
       }
@@ -26,7 +26,7 @@
       <app-panel-button [iconPath]="'delete'" (actionClick)="deleteSelected()" [tooltipText]="'Delete Selected'"
         [disabled]="!hasSelection()"></app-panel-button>
 
-      <app-panel-button [iconPath]="'arrow_forward'" (actionClick)="moveToArchive()" [disabled]="!hasSelection()"
+      <app-panel-button [iconPath]="'arrow_forward'" (actionClick)="restoreSelected()" [disabled]="!hasSelection()"
         [tooltipText]="'Move to Archive'"></app-panel-button>
 
       <app-panel-button [iconPath]="'close'" (actionClick)="closeWindows()" [tooltipText]="'Close'"></app-panel-button>
@@ -49,19 +49,6 @@
         <td mat-cell *matCellDef="let alert" class="col-target"> {{ alert.alertName }} </td>
       </ng-container>
 
-      <ng-container matColumnDef="isActive">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target"
-          style="text-align: center; padding: 0;">
-          ACTIVE
-        </th>
-
-        <td mat-cell *matCellDef="let alert" class="col-target">
-          <mat-slide-toggle [checked]="alert.isActive" color="primary" (click)="$event.stopPropagation()"
-            (change)="toggleActiveState(alert, $event)">
-          </mat-slide-toggle>
-        </td>
-      </ng-container>
-
       <ng-container matColumnDef="links">
         <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target"> LINKS </th>
         <td mat-cell *matCellDef="let alert" class="col-target">
@@ -75,7 +62,7 @@
         <th mat-header-cell *matHeaderCellDef class="col-target"> ACTIONS </th>
         <td mat-cell *matCellDef="let alert" class="col-target">
           <div class="links-pill">
-            <app-chart-actions [linkableObject]="alert" [status]="'working'"
+            <app-chart-actions [linkableObject]="alert" , [status]="'archived'"
               (alertUpdated)="loadAlerts()"></app-chart-actions>
           </div>
         </td>

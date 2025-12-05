@@ -5,10 +5,11 @@ import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 
 import { NotificationService } from '../notification.service';
-import { LineAlert } from '../../../models/alerts';
+// UPDATED: Added AlertsCollection to imports
+import { LineAlert, AlertsCollection } from '../../../models/alerts';
 
 /**
- * API Response типы (Аналогично WorkingCoinsApiService)
+ * API Response типы
  */
 interface AlertsApiResponse {
   success: boolean;
@@ -21,6 +22,8 @@ interface AlertActionResponse {
   id?: string;
   count?: number;
   deletedCount?: number;
+  // UPDATED: Added field for move operations
+  movedCount?: number;
 }
 
 /**
@@ -35,7 +38,6 @@ export class LineAlertsApiError extends Error {
 
 /**
  * Сервис для работы с Line Alerts API
- * Использует environment.alertsUrl для всех запросов
  */
 @Injectable({
   providedIn: 'root',
@@ -44,17 +46,12 @@ export class LineAlertsApiService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
 
-  // ⚠️ Предполагаем, что alertsUrl настроен на базовый путь для алертов (например, /api/alerts)
   private readonly baseUrl = environment.lineAlertsUrl;
 
   // ============================================
-  // 🛠️ Приватные утилиты для обработки ошибок
-  // (Скопированы и адаптированы из WorkingCoinsApiService)
+  // 🛠️ Приватные утилиты
   // ============================================
 
-  /**
-   * Обработчик HTTP ошибок с уведомлениями
-   */
   private handleError(operation: string, showNotification = true) {
     return (error: HttpErrorResponse): Observable<never> => {
       let errorMessage = '';
@@ -94,9 +91,6 @@ export class LineAlertsApiService {
     };
   }
 
-  /**
-   * Обёртка для безопасного выполнения async операций
-   */
   private async safeExecute<T>(
     operation: () => Promise<T>,
     operationName: string,
@@ -121,7 +115,7 @@ export class LineAlertsApiService {
   }
 
   // ============================================
-  // 📥 GET - Получение алертов (GET /api/alerts/line)
+  // 📥 GET
   // ============================================
 
   public getAllAlerts(): Observable<AlertsApiResponse> {
@@ -138,12 +132,9 @@ export class LineAlertsApiService {
   }
 
   // ============================================
-  // ➕ POST - Добавление алертов
+  // ➕ POST (ADD)
   // ============================================
 
-  /**
-   * POST /api/alerts/line
-   */
   public addAlert(alert: LineAlert): Observable<AlertActionResponse> {
     return this.http.post<AlertActionResponse>(this.baseUrl, alert).pipe(
       tap(() =>
@@ -160,9 +151,6 @@ export class LineAlertsApiService {
     }, 'Добавление Line Alert');
   }
 
-  /**
-   * POST /api/alerts/line/batch
-   */
   public addAlertsBatch(alerts: LineAlert[]): Observable<AlertActionResponse> {
     return this.http.post<AlertActionResponse>(`${this.baseUrl}/batch`, alerts).pipe(
       tap((response) =>
@@ -180,12 +168,9 @@ export class LineAlertsApiService {
   }
 
   // ============================================
-  // ❌ DELETE - Удаление алертов
+  // ❌ DELETE
   // ============================================
 
-  /**
-   * DELETE /api/alerts/line/:id
-   */
   public deleteAlert(id: string): Observable<AlertActionResponse> {
     return this.http.delete<AlertActionResponse>(`${this.baseUrl}/${id}`).pipe(
       tap(() => this.notificationService.success(`Line Alert успешно удален`)),
@@ -200,11 +185,8 @@ export class LineAlertsApiService {
     }, 'Удаление Line Alert');
   }
 
-  /**
-   * POST /api/alerts/line/delete-batch
-   */
   public deleteAlertsBatch(ids: string[]): Observable<AlertActionResponse> {
-    // Внимание: API использует POST с телом для delete-batch
+    // Отправляем массив строк, так как это согласовано с бэкендом
     return this.http.post<AlertActionResponse>(`${this.baseUrl}/delete-batch`, ids).pipe(
       tap((response) =>
         this.notificationService.success(`Удалено Line Alerts: ${response.deletedCount || 0}`)
@@ -220,9 +202,6 @@ export class LineAlertsApiService {
     }, 'Пакетное удаление Line Alerts');
   }
 
-  /**
-   * DELETE /api/alerts/line/all
-   */
   public deleteAllAlerts(): Observable<AlertActionResponse> {
     return this.http.delete<AlertActionResponse>(`${this.baseUrl}/all`).pipe(
       tap((response) =>
@@ -237,5 +216,42 @@ export class LineAlertsApiService {
       const response = await firstValueFrom(this.deleteAllAlerts());
       return response.deletedCount || 0;
     }, 'Удаление всех Line Alerts');
+  }
+
+  // ============================================
+  // 📦 MOVE (UNIVERSAL)
+  // ============================================
+
+  /**
+   * Универсальное перемещение алертов между коллекциями.
+   * POST /api/alerts/line/move
+   * Body: { ids: string[], from: string, to: string }
+   */
+  public moveAlerts(
+    ids: string[],
+    from: AlertsCollection,
+    to: AlertsCollection
+  ): Observable<AlertActionResponse> {
+    const body = { ids, from, to };
+
+    return this.http.post<AlertActionResponse>(`${this.baseUrl}/move`, body).pipe(
+      tap((response) =>
+        this.notificationService.success(
+          `Перемещено (${from} ⟶ ${to}): ${response.movedCount || 0}`
+        )
+      ),
+      catchError(this.handleError(`Перемещение Line Alerts (${from} -> ${to})`))
+    );
+  }
+
+  public async moveAlertsAsync(
+    ids: string[],
+    from: AlertsCollection,
+    to: AlertsCollection
+  ): Promise<number> {
+    return this.safeExecute(async () => {
+      const response = await firstValueFrom(this.moveAlerts(ids, from, to));
+      return response.movedCount || 0;
+    }, `Перемещение Line Alerts (${from} -> ${to})`);
   }
 }

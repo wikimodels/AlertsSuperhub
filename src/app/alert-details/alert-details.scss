@@ -1,0 +1,123 @@
+.details-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1e1e1e;
+  color: #fff;
+  overflow: hidden;
+}
+
+.details-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px; // Вернул чуть больше паддинга для воздуха, если текст большой
+  background: #2b2b2b;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  gap: 20px;
+
+  // 🚀 FIX: Убрали жесткую высоту, поставили минимальную.
+  // Теперь хедер будет расти вместе с текстом.
+  min-height: 70px;
+  height: auto;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    align-self: flex-start; // Логотип останется сверху, если текст длинный
+    margin-top: 4px;         // Компенсация, чтобы ровно стоял
+
+    .coin-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: contain;
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+
+      h2 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #fff;
+        line-height: 1;
+      }
+
+      .subtitle {
+        font-size: 0.7rem;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    }
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 36px;
+    background-color: rgba(255,255,255,0.1);
+    flex-shrink: 0;
+    align-self: center; // Разделитель всегда по центру высоты хедера
+  }
+
+  .header-description {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    // overflow: hidden; // УБРАНО, чтобы текст не скрывался
+
+    .desc-label {
+      font-size: 0.65rem;
+      color: #E000B0;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .desc-text {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #ddd;
+      line-height: 1.4; // Чуть увеличил интерлиньяж для читаемости
+
+      // 🚀 FIX: Разрешаем перенос текста
+      white-space: normal;
+      word-break: break-word; // Ломает длинные "uuuuwwww" если они не влезают
+    }
+  }
+
+  .close-btn {
+    flex-shrink: 0;
+    color: #aaa;
+    margin-left: auto;
+    align-self: flex-start; // Кнопка закрытия всегда сверху справа
+    margin-top: -8px;       // Чуть подтянуть вверх визуально
+    &:hover { color: #fff; }
+  }
+}
+
+// --- ГАЛЕРЕЯ ---
+// Она автоматически сожмется, если хедер станет выше
+.details-gallery {
+  flex-grow: 1;
+  height: 0;
+  min-height: 0;
+  background: #000;
+  position: relative;
+
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  ::ng-deep app-simple-carousel {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+}
