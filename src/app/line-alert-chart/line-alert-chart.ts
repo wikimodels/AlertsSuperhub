@@ -34,7 +34,10 @@ import { ChartDataService } from '../shared/services/chart-data.service';
 import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
 import { ChartLineObject } from '../models/chart-line-object';
 import { createLineAlertFromLine } from './functions/create-line-alert';
-import { LineAlertsApiService } from '../shared/services/api/line-alerts-api.service'; // ← NEW
+
+// 🚀 FIX: Заменили старый сервис на универсальный
+import { UniversalAlertsApiService } from '../shared/services/api/universal-alerts-api.service';
+import { LineAlert, AlertType, AlertStatus } from '../models/alerts';
 
 interface OHLCVData extends CandlestickData {
   volume: number;
@@ -51,7 +54,14 @@ interface OHLCVData extends CandlestickData {
 export class LineAlertChart implements AfterViewInit, OnDestroy {
   public isLoading = signal(true);
   private chartDataService = inject(ChartDataService);
-  private lineAlertsApiService = inject(LineAlertsApiService); // ← NEW
+
+  // 🚀 FIX: Инжектируем новый сервис
+  private api = inject(UniversalAlertsApiService);
+
+  // 🚀 FIX: Задаем параметры для Line Alerts (Working)
+  private readonly alertType: AlertType = 'line';
+  private readonly alertStatus: AlertStatus = 'working';
+
   private route = inject(ActivatedRoute);
   private zone = inject(NgZone);
   private coinWindowService = inject(CoinWindowService);
@@ -74,7 +84,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
   private horizontalLines: ChartLineObject[] = [];
   private lineColors = ['#90EE90', '#FF0000', '#FFA500', '#800080'];
 
-  // ← NEW: Map для связи ChartLineObject.id → LineAlert.id (UUID из БД)
+  // Map для связи ChartLineObject.id → LineAlert.id (UUID из БД)
   private lineToAlertIdMap = new Map<string, string>();
 
   constructor() {
@@ -247,7 +257,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
       this.volumeSeries.setData(volumeData);
       this.chartApi.timeScale().fitContent();
 
-      // ✅ NEW: Загружаем существующие алерты после загрузки свечей
+      // Загружаем существующие алерты после загрузки свечей
       await this.loadHorizontalLines(symbol);
     }
 
@@ -267,7 +277,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ NEW: Load Existing Alerts from API
+  // ✅ LOAD EXISTING ALERTS
   // ============================================
 
   private async loadHorizontalLines(symbol: string): Promise<void> {
@@ -276,7 +286,8 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     try {
       console.log(`[Chart] 📥 Загрузка существующих алертов для ${symbol}...`);
 
-      const allAlerts = await this.lineAlertsApiService.getAllAlertsAsync();
+      // 🚀 FIX: Используем новый сервис с параметрами
+      const allAlerts = await this.api.getAlertsAsync<LineAlert>(this.alertType, this.alertStatus);
 
       // Фильтруем алерты только для текущего символа
       const symbolAlerts = allAlerts.filter((alert) => alert.symbol === symbol);
@@ -314,7 +325,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
 
         this.horizontalLines.push(lineObject);
 
-        // ✅ Связываем локальный lineId с UUID из БД
+        // Связываем локальный lineId с UUID из БД
         this.lineToAlertIdMap.set(lineId, alert.id);
 
         console.log(`✅ Алерт загружен: ${alert.alertName || alert.symbol} @ ${alert.price}`);
@@ -362,7 +373,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     console.log('[Chart] 💡 Подписка на клики установлена.');
   }
 
-  // ✅ UPDATED: Save to API
+  // ✅ ADD ALERT
   private async addHorizontalLine(price: number): Promise<void> {
     if (!this.chartApi || this.candleData.length === 0) return;
 
@@ -395,7 +406,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
 
     this.horizontalLines.push(lineObject);
 
-    // ✅ Создаём LineAlert и сохраняем в БД
+    // Создаём объект LineAlert
     const newAlert = createLineAlertFromLine(
       this.symbol(),
       this.exchanges(),
@@ -404,12 +415,13 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     );
 
     try {
-      const success = await this.lineAlertsApiService.addAlertAsync(newAlert);
+      // 🚀 FIX: Используем новый сервис
+      const success = await this.api.addAlertAsync(this.alertType, this.alertStatus, newAlert);
 
       if (success) {
-        // ✅ Связываем локальный lineId с UUID из БД
-        // Нужно получить ID из ответа API (если возвращается)
-        // Для упрощения используем newAlert.id (который был сгенерирован локально)
+        // Если API не возвращает ID, используем тот, что сгенерировали сами (если это поддерживается)
+        // Или в идеале API должно вернуть ID. В UniversalAlertsApiService мы не возвращаем ID из addAlertAsync,
+        // но можно доработать, если нужно. Пока считаем, что newAlert.id валиден.
         this.lineToAlertIdMap.set(lineId, newAlert.id);
         console.log('%c✅ СОЗДАН LineAlert:', 'color: green; font-weight: bold;', newAlert);
       }
@@ -424,19 +436,19 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     }
   }
 
-  // ✅ UPDATED: Delete from API
+  // ✅ REMOVE ALERT
   private async removeHorizontalLine(lineObject: ChartLineObject, index: number): Promise<void> {
     if (!this.chartApi) return;
 
-    // ✅ Получаем UUID алерта из БД
+    // Получаем UUID алерта из БД
     const alertId = this.lineToAlertIdMap.get(lineObject.id);
 
     if (alertId) {
       try {
-        await this.lineAlertsApiService.deleteAlertAsync(alertId);
-        console.log('%c🗑️ УДАЛЁН LineAlert:', 'color: red; font-weight: bold;', alertId);
+        // 🚀 FIX: Используем новый сервис
+        await this.api.deleteAlertAsync(this.alertType, this.alertStatus, alertId);
 
-        // Удаляем из маппинга
+        console.log('%c🗑️ УДАЛЁН LineAlert:', 'color: red; font-weight: bold;', alertId);
         this.lineToAlertIdMap.delete(lineObject.id);
       } catch (error) {
         console.error('[Chart] ❌ Ошибка удаления алерта:', error);
@@ -452,13 +464,11 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
   private clearAllLines(): void {
     if (!this.chartApi) return;
 
-    // Копируем массив для безопасной итерации
     const linesToRemove = [...this.horizontalLines];
 
     linesToRemove.forEach((lineObj) => {
       const realIndex = this.horizontalLines.indexOf(lineObj);
       if (realIndex > -1) {
-        // Удаляем с графика (без вызова API - это локальная очистка)
         this.chartApi!.removeSeries(lineObj.series);
         this.horizontalLines.splice(realIndex, 1);
       }

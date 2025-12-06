@@ -3,6 +3,7 @@ import { WorkingCoin } from '../models/working-coin.model';
 import { CoinLinksService } from './coin-links.service';
 import { NotificationService } from './notification.service';
 import { WindowManager } from '../functions/window-manager';
+import { LineAlert, VwapAlert } from '../../models/alerts';
 
 /**
  * Сервис для открытия окон с монетами
@@ -19,7 +20,7 @@ export class CoinWindowService {
   /**
    * Открыть TradingView для выбранных монет
    */
-  public async openTradingView(coins: WorkingCoin[]): Promise<void> {
+  public async openTradingView(coins: WorkingCoin[] | LineAlert[] | VwapAlert[]): Promise<void> {
     if (!this.validateSelection(coins)) return;
 
     const urls = coins
@@ -32,7 +33,7 @@ export class CoinWindowService {
   /**
    * Открыть CoinGlass для выбранных монет
    */
-  public async openCoinGlass(coins: WorkingCoin[]): Promise<void> {
+  public async openCoinGlass(coins: WorkingCoin[] | LineAlert[] | VwapAlert[]): Promise<void> {
     if (!this.validateSelection(coins)) return;
 
     const urls = coins
@@ -45,7 +46,9 @@ export class CoinWindowService {
   /**
    * Открыть VWAP Alert Charts для выбранных монет
    */
-  public async openVwapAlertCharts(coins: WorkingCoin[]): Promise<void> {
+  public async openVwapAlertCharts(
+    coins: WorkingCoin[] | LineAlert[] | VwapAlert[]
+  ): Promise<void> {
     if (!this.validateSelection(coins)) return;
 
     const urls = coins.map((coin) => `/vwap-alert-chart?symbol=${encodeURIComponent(coin.symbol)}`);
@@ -56,7 +59,9 @@ export class CoinWindowService {
   /**
    * Открыть Line Alert Charts для выбранных монет
    */
-  public async openLineAlertCharts(coins: WorkingCoin[]): Promise<void> {
+  public async openLineAlertCharts(
+    coins: WorkingCoin[] | LineAlert[] | VwapAlert[]
+  ): Promise<void> {
     if (!this.validateSelection(coins)) return;
 
     const urls = coins.map((coin) => `/line-alert-chart?symbol=${encodeURIComponent(coin.symbol)}`);
@@ -88,7 +93,7 @@ export class CoinWindowService {
   /**
    * Проверка: есть ли выбранные монеты
    */
-  private validateSelection(coins: WorkingCoin[]): boolean {
+  private validateSelection(coins: WorkingCoin[] | LineAlert[] | VwapAlert[]): boolean {
     if (coins.length === 0) {
       this.notificationService.info('No coins selected');
       return false;

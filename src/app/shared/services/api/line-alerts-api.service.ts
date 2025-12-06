@@ -5,12 +5,8 @@ import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 
 import { NotificationService } from '../notification.service';
-// UPDATED: Added AlertsCollection to imports
 import { LineAlert, AlertsCollection } from '../../../models/alerts';
 
-/**
- * API Response типы
- */
 interface AlertsApiResponse {
   success: boolean;
   count: number;
@@ -22,13 +18,9 @@ interface AlertActionResponse {
   id?: string;
   count?: number;
   deletedCount?: number;
-  // UPDATED: Added field for move operations
   movedCount?: number;
 }
 
-/**
- * Кастомный класс ошибки для API операций
- */
 export class LineAlertsApiError extends Error {
   constructor(message: string, public statusCode?: number, public originalError?: any) {
     super(message);
@@ -36,9 +28,6 @@ export class LineAlertsApiError extends Error {
   }
 }
 
-/**
- * Сервис для работы с Line Alerts API
- */
 @Injectable({
   providedIn: 'root',
 })
@@ -46,47 +35,27 @@ export class LineAlertsApiService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
 
+  // Базовый URL: .../api/alerts/line
   private readonly baseUrl = environment.lineAlertsUrl;
 
-  // ============================================
-  // 🛠️ Приватные утилиты
-  // ============================================
+  // 👇 ДОБАВЛЕНО: Хардкодим статус 'working', так как этот сервис пока для рабочих алертов.
+  // Если потом понадобятся triggered/archived, лучше передавать статус аргументом в методы.
+  private readonly workingStatus = 'working';
 
+  // ============================================
+  // 🛠️ Приватные утилиты (без изменений)
+  // ============================================
   private handleError(operation: string, showNotification = true) {
     return (error: HttpErrorResponse): Observable<never> => {
       let errorMessage = '';
-
       if (error.error instanceof ErrorEvent) {
         errorMessage = `Ошибка: ${error.error.message}`;
       } else {
-        switch (error.status) {
-          case 0:
-            errorMessage = 'Нет соединения с сервером';
-            break;
-          case 400:
-            errorMessage = error.error?.message || 'Некорректный запрос';
-            break;
-          case 404:
-            errorMessage = 'Ресурс не найден';
-            break;
-          case 409:
-            errorMessage = error.error?.message || 'Конфликт данных';
-            break;
-          case 500:
-            errorMessage = 'Внутренняя ошибка сервера';
-            break;
-          default:
-            errorMessage = `Ошибка ${error.status}: ${error.error?.message || error.message}`;
-        }
+        errorMessage = `Ошибка ${error.status}: ${error.error?.message || error.message}`;
       }
-
       const fullMessage = `${operation} - ${errorMessage}`;
       console.error(`[LineAlertsApiService] ${fullMessage}`, error);
-
-      if (showNotification) {
-        this.notificationService.error(fullMessage);
-      }
-
+      if (showNotification) this.notificationService.error(fullMessage);
       return throwError(() => new LineAlertsApiError(fullMessage, error.status, error));
     };
   }
@@ -99,17 +68,9 @@ export class LineAlertsApiService {
     try {
       return await operation();
     } catch (error) {
-      const errorMessage =
-        error instanceof LineAlertsApiError
-          ? error.message
-          : `${operationName} - Неизвестная ошибка`;
-
-      console.error(`[LineAlertsApiService] ${errorMessage}`, error);
-
       if (showNotification && !(error instanceof LineAlertsApiError)) {
-        this.notificationService.error(errorMessage);
+        this.notificationService.error(`${operationName} - Неизвестная ошибка`);
       }
-
       throw error;
     }
   }
@@ -119,8 +80,10 @@ export class LineAlertsApiService {
   // ============================================
 
   public getAllAlerts(): Observable<AlertsApiResponse> {
+    // 🚀 FIX: Добавляем /working
+    const url = `${this.baseUrl}/${this.workingStatus}`;
     return this.http
-      .get<AlertsApiResponse>(this.baseUrl)
+      .get<AlertsApiResponse>(url)
       .pipe(catchError(this.handleError('Получение списка Line Alerts')));
   }
 
@@ -136,7 +99,9 @@ export class LineAlertsApiService {
   // ============================================
 
   public addAlert(alert: LineAlert): Observable<AlertActionResponse> {
-    return this.http.post<AlertActionResponse>(this.baseUrl, alert).pipe(
+    // 🚀 FIX: Добавляем /working
+    const url = `${this.baseUrl}/${this.workingStatus}`;
+    return this.http.post<AlertActionResponse>(url, alert).pipe(
       tap(() =>
         this.notificationService.success(`Line Alert для "${alert.symbol}" успешно добавлен`)
       ),
@@ -152,7 +117,9 @@ export class LineAlertsApiService {
   }
 
   public addAlertsBatch(alerts: LineAlert[]): Observable<AlertActionResponse> {
-    return this.http.post<AlertActionResponse>(`${this.baseUrl}/batch`, alerts).pipe(
+    // 🚀 FIX: Добавляем /working
+    const url = `${this.baseUrl}/${this.workingStatus}/batch`;
+    return this.http.post<AlertActionResponse>(url, alerts).pipe(
       tap((response) =>
         this.notificationService.success(`Добавлено Line Alerts: ${response.count || 0}`)
       ),
@@ -172,7 +139,9 @@ export class LineAlertsApiService {
   // ============================================
 
   public deleteAlert(id: string): Observable<AlertActionResponse> {
-    return this.http.delete<AlertActionResponse>(`${this.baseUrl}/${id}`).pipe(
+    // 🚀 FIX: Добавляем /working
+    const url = `${this.baseUrl}/${this.workingStatus}/${id}`;
+    return this.http.delete<AlertActionResponse>(url).pipe(
       tap(() => this.notificationService.success(`Line Alert успешно удален`)),
       catchError(this.handleError('Удаление Line Alert'))
     );
@@ -186,8 +155,9 @@ export class LineAlertsApiService {
   }
 
   public deleteAlertsBatch(ids: string[]): Observable<AlertActionResponse> {
-    // Отправляем массив строк, так как это согласовано с бэкендом
-    return this.http.post<AlertActionResponse>(`${this.baseUrl}/delete-batch`, ids).pipe(
+    // 🚀 FIX: Добавляем /working
+    const url = `${this.baseUrl}/${this.workingStatus}/delete-batch`;
+    return this.http.post<AlertActionResponse>(url, ids).pipe(
       tap((response) =>
         this.notificationService.success(`Удалено Line Alerts: ${response.deletedCount || 0}`)
       ),
@@ -203,7 +173,9 @@ export class LineAlertsApiService {
   }
 
   public deleteAllAlerts(): Observable<AlertActionResponse> {
-    return this.http.delete<AlertActionResponse>(`${this.baseUrl}/all`).pipe(
+    // 🚀 FIX: Добавляем /working
+    const url = `${this.baseUrl}/${this.workingStatus}/all`;
+    return this.http.delete<AlertActionResponse>(url).pipe(
       tap((response) =>
         this.notificationService.warning(`Все Line Alerts удалены (${response.deletedCount || 0})`)
       ),
@@ -222,19 +194,17 @@ export class LineAlertsApiService {
   // 📦 MOVE (UNIVERSAL)
   // ============================================
 
-  /**
-   * Универсальное перемещение алертов между коллекциями.
-   * POST /api/alerts/line/move
-   * Body: { ids: string[], from: string, to: string }
-   */
   public moveAlerts(
     ids: string[],
     from: AlertsCollection,
     to: AlertsCollection
   ): Observable<AlertActionResponse> {
+    // Для мува URL немного другой: /alerts/line/move (без статуса в середине, так как он в body)
+    // Смотрим роут: alertRoutes.post("/alerts/:type/move", ...)
+    const url = `${this.baseUrl}/move`;
     const body = { ids, from, to };
 
-    return this.http.post<AlertActionResponse>(`${this.baseUrl}/move`, body).pipe(
+    return this.http.post<AlertActionResponse>(url, body).pipe(
       tap((response) =>
         this.notificationService.success(
           `Перемещено (${from} ⟶ ${to}): ${response.movedCount || 0}`

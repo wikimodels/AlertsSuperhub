@@ -11,26 +11,14 @@
 
     <h2 class="header-title">
       Working Line Alerts
-      @if (alertsCount() > 0) {
+      <!-- @if (alertsCount() > 0) {
       <span>({{ alertsCount() }})</span>
-      }
+      } -->
     </h2>
 
-    <div class="header-actions">
-      <app-panel-button [iconPath]="getSelectAllIcon()" (actionClick)="masterToggle()"
-        [tooltipText]="isAllSelected() ? 'Unselect All' : 'Select All'">
-      </app-panel-button>
-
-      <app-panel-button [iconPath]="'refresh'" (actionClick)="refresh()" [tooltipText]="'Refresh'"></app-panel-button>
-
-      <app-panel-button [iconPath]="'delete'" (actionClick)="deleteSelected()" [tooltipText]="'Delete Selected'"
-        [disabled]="!hasSelection()"></app-panel-button>
-
-      <app-panel-button [iconPath]="'arrow_forward'" (actionClick)="moveToArchive()" [disabled]="!hasSelection()"
-        [tooltipText]="'Move to Archive'"></app-panel-button>
-
-      <app-panel-button [iconPath]="'close'" (actionClick)="closeWindows()" [tooltipText]="'Close'"></app-panel-button>
-    </div>
+    <app-alerts-panel-buttons [type]="'line'" [status]="'working'" [data]="dataSource.data"
+      (refreshClicked)="loadAlerts()" (dataChanged)="loadAlerts()">
+    </app-alerts-panel-buttons>
   </div>
 
   <div class="table-wrapper" [appScrollReset]="dataSource.data">
@@ -54,7 +42,6 @@
           style="text-align: center; padding: 0;">
           ACTIVE
         </th>
-
         <td mat-cell *matCellDef="let alert" class="col-target">
           <mat-slide-toggle [checked]="alert.isActive" color="primary" (click)="$event.stopPropagation()"
             (change)="toggleActiveState(alert, $event)">
@@ -95,7 +82,7 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
       <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell empty-cell" colspan="5">No data matching the filter</td>
+        <td class="mat-cell empty-cell" colspan="6">No data matching the filter</td>
       </tr>
     </table>
   </div>

@@ -1,0 +1,40 @@
+<div class="header-actions" style="display: flex; gap: 8px;">
+
+  <app-panel-button [iconPath]="'refresh'" (actionClick)="onRefresh()" [tooltipText]="'Refresh'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'assets/icons/tv.svg'" (actionClick)="openTradingView()"
+    [tooltipText]="'Открыть TradingView'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'assets/icons/cg.svg'" (actionClick)="openCoinGlass()"
+    [tooltipText]="'Открыть CoinGlass'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'candlestick_chart'" (actionClick)="goToVwapAlertCharts()"
+    [tooltipText]="'VWAP Alerts'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'show_chart'" (actionClick)="goToLineAlertCharts()" [tooltipText]="'Line Alerts'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'assets/icons/bitcoin.svg'" (actionClick)="openBitcoinChart()"
+    [tooltipText]="'График BTC'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'delete'" (actionClick)="deleteSelected()" [tooltipText]="'Delete Selected'"
+    [disabled]="!hasSelection()">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'arrow_forward'" (actionClick)="moveToArchive()"
+    [disabled]="!hasSelection() || status === 'archived'" [tooltipText]="'Move to Archive'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="'close'" (actionClick)="closeWindows()" [tooltipText]="'Close Windows'">
+  </app-panel-button>
+
+  <app-panel-button [iconPath]="getSelectAllIcon()" (actionClick)="masterToggle()"
+    [tooltipText]="isAllSelected() ? 'Unselect All' : 'Select All'">
+  </app-panel-button>
+
+</div>

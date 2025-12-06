@@ -7,28 +7,23 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
-// UPDATED: Added AlertsCollection to imports
-import { LineAlert, AlertsCollection } from '../models/alerts';
+import { LineAlert } from '../models/alerts';
 import { LoadingSpinnerComponent } from '../shared/components/loading-spinner/loading-spinner.component';
-import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
-
-// 🚀 CHANGE #1: Import Universal Service
 import { UniversalAlertsApiService } from '../shared/services/api/universal-alerts-api.service';
-
 import { SearchFilterComponent } from '../shared/components/search-filter/search-filter.component';
 import { LinksComponent } from '../shared/components/links/links.component';
 import { ChartActionsComponent } from '../shared/components/chart-actions/chart-actions.component';
 import { GenericSelectionService } from '../shared/services/generic.selection.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ScrollResetDirective } from '../directives/scroll-reset.directive';
+import { AlertsPanelButtonsComponent } from '../shared/components/alerts-panel-buttons/alerts-panel-buttons';
 
 @Component({
-  selector: 'app-triggered-line-alerts', // 🚀 FIXED: Selector name to match component
+  selector: 'app-triggered-line-alerts',
   standalone: true,
   imports: [
     CommonModule,
     SearchFilterComponent,
-    PanelButtonComponent,
     LoadingSpinnerComponent,
     ChartActionsComponent,
     LinksComponent,
@@ -39,29 +34,24 @@ import { ScrollResetDirective } from '../directives/scroll-reset.directive';
     MatSortModule,
     MatButtonModule,
     MatCheckboxModule,
+    // 👇 Добавляем компонент в импорты
+    AlertsPanelButtonsComponent,
   ],
   templateUrl: './triggered-line-alerts.html',
-  styleUrl: './triggered-line-alerts.scss',
+  styleUrl: './triggered-line-alerts.scss', // Убедись, что этот файл существует или используй triggered-line-alerts.css
 })
 export class TriggeredLineAlerts implements OnInit {
-  // 🚀 CHANGE #2: Inject Universal Service
   private api = inject(UniversalAlertsApiService);
-
   public selectionService = inject(GenericSelectionService<LineAlert>);
 
-  // ✅ Реактивные данные
   private selectionSignal = toSignal(this.selectionService.selectionChanges$, {
     initialValue: [],
   });
 
-  // Signals
   isLoading = signal<boolean>(true);
   alertsCount = signal<number>(0);
 
-  // 1. DATA SOURCE
   dataSource = new MatTableDataSource<LineAlert>([]);
-
-  // 2. COLUMNS
   displayedColumns: string[] = [
     'symbol',
     'alertName',
@@ -71,10 +61,13 @@ export class TriggeredLineAlerts implements OnInit {
     'checkbox',
   ];
 
-  // 3. VIEW CHILD SETTERS
   @ViewChild(MatPaginator) set paginator(pager: MatPaginator) {
     if (pager) {
       this.dataSource.paginator = pager;
+      // Фикс для корректного отображения кол-ва страниц после загрузки
+      if (this.dataSource.data.length > 0) {
+        pager.length = this.dataSource.data.length;
+      }
     }
   }
 
@@ -98,7 +91,7 @@ export class TriggeredLineAlerts implements OnInit {
   async loadAlerts() {
     this.isLoading.set(true);
     try {
-      // 🚀 CHANGE #3: Fetch ('line', 'triggered')
+      // Загружаем ('line', 'triggered')
       const data = await this.api.getAlertsAsync<LineAlert>('line', 'triggered');
 
       this.dataSource.data = data;
@@ -121,98 +114,5 @@ export class TriggeredLineAlerts implements OnInit {
       this.dataSource.paginator.firstPage();
     }
     this.alertsCount.set(this.dataSource.filteredData.length);
-  }
-
-  // --- SELECTION LOGIC ---
-
-  isAllSelected() {
-    const numSelected = this.selectionService.selectedValues().length;
-    const numRows = this.dataSource.data.length;
-    return numSelected === numRows && numRows > 0;
-  }
-
-  masterToggle() {
-    this.isAllSelected()
-      ? this.selectionService.clear()
-      : this.selectionService.select(this.dataSource.data);
-  }
-
-  hasSelection(): boolean {
-    return this.selectionService.hasValue();
-  }
-
-  getSelectAllIcon(): string {
-    if (this.isAllSelected()) {
-      return 'check_box';
-    }
-    if (this.hasSelection()) {
-      return 'indeterminate_check_box';
-    }
-    return 'check_box_outline_blank';
-  }
-
-  // --- ACTIONS ---
-
-  async deleteSelected() {
-    const selected = this.selectionService.selectedValues();
-    if (selected.length === 0) return;
-
-    // Use 'id' (UUID) instead of '_id' (ObjectId)
-    const ids = selected.map((a) => a.id).filter((id): id is string => !!id);
-
-    if (ids.length === 0) return;
-
-    // 🚀 CHANGE #4: Delete from ('line', 'triggered')
-    const deletedCount = await this.api.deleteAlertsBatchAsync('line', 'triggered', ids);
-
-    if (deletedCount > 0) {
-      const deletedIdsSet = new Set(ids);
-      const newData = this.dataSource.data.filter((a) => !deletedIdsSet.has(a.id!));
-
-      this.dataSource.data = newData;
-      this.alertsCount.set(newData.length);
-      this.selectionService.clear();
-    }
-  }
-
-  // 🚀 CHANGE #5: Move FROM 'triggered' TO 'archived'
-  async moveToArchive() {
-    const selected = this.selectionService.selectedValues();
-    if (selected.length === 0) return;
-
-    const ids = selected.map((a) => a.id).filter((id): id is string => !!id);
-    if (ids.length === 0) return;
-
-    // Using new Universal Service method
-    const movedCount = await this.api.moveAlertsAsync(
-      'line', // Type
-      'triggered', // From
-      'archived', // To
-      ids
-    );
-
-    if (movedCount > 0) {
-      // Remove moved items from the current table
-      const movedIdsSet = new Set(ids);
-      const newData = this.dataSource.data.filter((a) => !movedIdsSet.has(a.id!));
-
-      this.dataSource.data = newData;
-      this.alertsCount.set(newData.length);
-      this.selectionService.clear();
-    }
-  }
-
-  /* // Optional: Reactivate Alert (Triggered -> Working)
-  async reactivateSelected() {
-    // ... similar logic but to: 'working'
-  }
-  */
-
-  refresh() {
-    this.loadAlerts();
-  }
-
-  closeWindows() {
-    console.log('Close windows');
   }
 }

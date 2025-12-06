@@ -34,7 +34,10 @@ import {
 import { ChartDataService } from '../shared/services/chart-data.service';
 import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
 import { VwapAlert } from '../models/alerts';
-import { VwapAlertsApiService } from '../shared/services/api/vwap-alerts-api.service';
+
+// 🚀 FIX: Заменили старый сервис на универсальный
+import { UniversalAlertsApiService } from '../shared/services/api/universal-alerts-api.service';
+import { AlertType, AlertStatus } from '../models/alerts';
 
 interface OHLCVData extends CandlestickData {
   volume: number;
@@ -62,7 +65,14 @@ interface VwapLineObject {
 export class VwapAlertChart implements AfterViewInit, OnDestroy {
   public isLoading = signal(true);
   private chartDataService = inject(ChartDataService);
-  private vwapAlertsApiService = inject(VwapAlertsApiService);
+
+  // 🚀 FIX: Инжектируем новый сервис
+  private api = inject(UniversalAlertsApiService);
+
+  // 🚀 FIX: Задаем параметры для VWAP Alerts (Working)
+  private readonly alertType: AlertType = 'vwap';
+  private readonly alertStatus: AlertStatus = 'working';
+
   private route = inject(ActivatedRoute);
   private zone = inject(NgZone);
   private coinWindowService = inject(CoinWindowService);
@@ -285,7 +295,9 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
     try {
       console.log(`[VwapChart] 🔥 Загрузка существующих VWAP алертов для ${symbol}...`);
 
-      const allAlerts = await this.vwapAlertsApiService.getAllAlertsAsync();
+      // 🚀 FIX: Используем новый сервис
+      const allAlerts = await this.api.getAlertsAsync<VwapAlert>(this.alertType, this.alertStatus);
+
       const symbolAlerts = allAlerts.filter((alert) => alert.symbol === symbol);
 
       console.log(`[VwapChart] Найдено ${symbolAlerts.length} VWAP алертов для ${symbol}`);
@@ -310,9 +322,6 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
   // VWAP Calculation & Management
   // ============================================
 
-  /**
-   * Рассчитывает Anchored VWAP начиная с указанного индекса
-   */
   private calculateAnchoredVWAP(anchorIndex: number): Array<{ time: Time; value: number }> {
     const vwapData: Array<{ time: Time; value: number }> = [];
     let cumulativePV = 0;
@@ -334,11 +343,7 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
     return vwapData;
   }
 
-  /**
-   * Восстанавливает VWAP линию из сохранённого алерта
-   */
   private async restoreVWAPLine(alert: VwapAlert, anchorTimeInSeconds: number): Promise<void> {
-    // Ищем свечу по времени (≥ anchorTime)
     const anchorIndex = this.candleData.findIndex((bar) => {
       const barTime = typeof bar.time === 'number' ? bar.time : (bar.time as any).timestamp || 0;
       return barTime >= anchorTimeInSeconds;
@@ -419,7 +424,7 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
           }
         }
 
-        // 🎯 Проверяем клик на свечу (строго в её диапазоне)
+        // 🎯 Проверяем клик на свечу
         const isOnCandle =
           clickedPrice >= (candleData as any).low && clickedPrice <= (candleData as any).high;
 
@@ -440,7 +445,6 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
   private async addVWAPLine(clickedTime: number): Promise<void> {
     if (!this.chartApi || this.candleData.length === 0) return;
 
-    // Ищем свечу по времени
     const anchorIndex = this.candleData.findIndex((bar) => {
       const barTime = typeof bar.time === 'number' ? bar.time : (bar.time as any).timestamp || 0;
       return barTime >= clickedTime;
@@ -458,13 +462,12 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
     const anchorBar = this.candleData[anchorIndex];
     const anchorPrice = (anchorBar.high + anchorBar.low + anchorBar.close) / 3;
 
-    // ✅ Создаём VwapAlert объект
     const newAlert: VwapAlert = {
       id: this.generateUUID(),
       symbol: this.symbol(),
       alertName: `VWAP ${this.symbol()}`,
       price: anchorPrice,
-      anchorTime: clickedTime * 1000, // Преобразуем в миллисекунды для БД
+      anchorTime: clickedTime * 1000,
       anchorTimeStr: new Date(clickedTime * 1000).toISOString(),
       anchorPrice,
       exchanges: this.exchanges(),
@@ -474,7 +477,6 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
       createdAt: new Date().toISOString(),
     };
 
-    // Создаём серию на графике
     const vwapSeries = this.chartApi.addSeries(LineSeries, {
       color,
       lineWidth: 2,
@@ -497,8 +499,8 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
     };
 
     try {
-      // ✅ Сохраняем в БД
-      await this.vwapAlertsApiService.addAlertAsync(newAlert);
+      // 🚀 FIX: Используем новый сервис
+      await this.api.addAlertAsync(this.alertType, this.alertStatus, newAlert);
 
       this.vwapLines.push(vwapObject);
 
@@ -509,7 +511,6 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
       });
     } catch (error) {
       console.error('[VwapChart] ❌ Ошибка сохранения VWAP алерта:', error);
-      // Откатываем изменения на графике
       this.chartApi.removeSeries(vwapSeries);
     }
   }
@@ -522,12 +523,11 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
     if (!this.chartApi) return;
 
     try {
-      // ✅ Удаляем из БД
-      await this.vwapAlertsApiService.deleteAlertAsync(vwapObject.alertId);
+      // 🚀 FIX: Используем новый сервис (deleteAlertAsync добавлен в UniversalAlertsApiService)
+      await this.api.deleteAlertAsync(this.alertType, this.alertStatus, vwapObject.alertId);
 
       console.log('%c🗑️ УДАЛЁН VWAP Alert:', 'color: red; font-weight: bold;', vwapObject.alertId);
 
-      // Удаляем с графика
       this.chartApi.removeSeries(vwapObject.series);
       this.vwapLines.splice(index, 1);
     } catch (error) {

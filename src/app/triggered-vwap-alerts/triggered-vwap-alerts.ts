@@ -6,9 +6,8 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 
-import { LineAlert } from '../models/alerts';
+import { LineAlert, VwapAlert } from '../models/alerts';
 import { LoadingSpinnerComponent } from '../shared/components/loading-spinner/loading-spinner.component';
 import { UniversalAlertsApiService } from '../shared/services/api/universal-alerts-api.service';
 import { SearchFilterComponent } from '../shared/components/search-filter/search-filter.component';
@@ -20,7 +19,7 @@ import { ScrollResetDirective } from '../directives/scroll-reset.directive';
 import { AlertsPanelButtonsComponent } from '../shared/components/alerts-panel-buttons/alerts-panel-buttons';
 
 @Component({
-  selector: 'app-working-line-alerts',
+  selector: 'app-triggered-vwap-alerts',
   standalone: true,
   imports: [
     CommonModule,
@@ -35,14 +34,13 @@ import { AlertsPanelButtonsComponent } from '../shared/components/alerts-panel-b
     MatSortModule,
     MatButtonModule,
     MatCheckboxModule,
-    MatSlideToggleModule,
     // 👇 Добавляем компонент в импорты
     AlertsPanelButtonsComponent,
   ],
-  templateUrl: './working-line-alerts.html',
-  styleUrl: './working-line-alerts.scss',
+  templateUrl: './triggered-vwap-alerts.html',
+  styleUrl: './triggered-vwap-alerts.scss', // Убедись, что этот файл существует или используй triggered-line-alerts.css
 })
-export class WorkingLineAlerts implements OnInit {
+export class TriggeredVwapAlerts implements OnInit {
   private api = inject(UniversalAlertsApiService);
   public selectionService = inject(GenericSelectionService<LineAlert>);
 
@@ -53,8 +51,15 @@ export class WorkingLineAlerts implements OnInit {
   isLoading = signal<boolean>(true);
   alertsCount = signal<number>(0);
 
-  dataSource = new MatTableDataSource<LineAlert>([]);
-  displayedColumns: string[] = ['symbol', 'alertName', 'isActive', 'links', 'actions', 'checkbox'];
+  dataSource = new MatTableDataSource<VwapAlert>([]);
+  displayedColumns: string[] = [
+    'symbol',
+    'anchorTimeStr',
+    'activationTime',
+    'links',
+    'actions',
+    'checkbox',
+  ];
 
   @ViewChild(MatPaginator) set paginator(pager: MatPaginator) {
     if (pager) {
@@ -67,11 +72,13 @@ export class WorkingLineAlerts implements OnInit {
   }
 
   @ViewChild(MatSort) set sort(sorter: MatSort) {
-    if (sorter) this.dataSource.sort = sorter;
+    if (sorter) {
+      this.dataSource.sort = sorter;
+    }
   }
 
   constructor() {
-    this.dataSource.filterPredicate = (data: LineAlert, filter: string) => {
+    this.dataSource.filterPredicate = (data: VwapAlert, filter: string) => {
       const dataStr = (data.symbol + data.price + (data.description || '')).toLowerCase();
       return dataStr.indexOf(filter) !== -1;
     };
@@ -84,7 +91,9 @@ export class WorkingLineAlerts implements OnInit {
   async loadAlerts() {
     this.isLoading.set(true);
     try {
-      const data = await this.api.getAlertsAsync<LineAlert>('line', 'working');
+      // Загружаем ('line', 'triggered')
+      const data = await this.api.getAlertsAsync<VwapAlert>('vwap', 'triggered');
+
       this.dataSource.data = data;
       this.alertsCount.set(data.length);
       this.selectionService.clear();
@@ -105,35 +114,5 @@ export class WorkingLineAlerts implements OnInit {
       this.dataSource.paginator.firstPage();
     }
     this.alertsCount.set(this.dataSource.filteredData.length);
-  }
-
-  // Логика переключения Active в таблице (остается здесь, так как привязана к строке)
-  async toggleActiveState(alert: LineAlert, event: MatSlideToggleChange) {
-    const newValue = event.checked;
-    const previousValue = !newValue;
-
-    if (!alert.id) {
-      console.error('❌ Ошибка: У алерта нет ID!', alert);
-      event.source.checked = previousValue;
-      return;
-    }
-
-    alert.isActive = newValue;
-
-    try {
-      const success = await this.api.updateAlertAsync('line', 'working', alert.id, {
-        isActive: newValue,
-      });
-
-      if (!success) {
-        console.warn('⚠️ API вернул false (не обновлено)');
-        alert.isActive = previousValue;
-        event.source.checked = previousValue;
-      }
-    } catch (err) {
-      alert.isActive = previousValue;
-      event.source.checked = previousValue;
-      console.error('❌ Failed to update active state', err);
-    }
   }
 }

@@ -48,4 +48,27 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./archived-line-alerts/archived-line-alerts').then((m) => m.ArchivedLineAlerts),
   },
+  {
+    path: 'working-vwap-alerts',
+    // Ленивая загрузка (Lazy Loading):
+    // Компонент загрузится, только когда пользователь перейдет на /coins
+    loadComponent: () =>
+      import('./working-vwap-alerts/working-vwap-alerts').then((m) => m.WorkingVwapAlerts),
+  },
+
+  {
+    path: 'triggered-vwap-alerts',
+    // Ленивая загрузка (Lazy Loading):
+    // Компонент загрузится, только когда пользователь перейдет на /coins
+    loadComponent: () =>
+      import('./triggered-vwap-alerts/triggered-vwap-alerts').then((m) => m.TriggeredVwapAlerts),
+  },
+
+  {
+    path: 'archived-vwap-alerts',
+    // Ленивая загрузка (Lazy Loading):
+    // Компонент загрузится, только когда пользователь перейдет на /coins
+    loadComponent: () =>
+      import('./archived-vwap-alerts/archived-vwap-alerts').then((m) => m.ArchivedVwapAlerts),
+  },
 ];

@@ -10,13 +10,13 @@
     <app-search-filter (searchChange)="onFilterChange($event)"></app-search-filter>
 
     <h2 class="header-title">
-      Triggered Line Alerts
+      Archived VWAP Alerts
       <!-- @if (alertsCount() > 0) {
       <span>({{ alertsCount() }})</span>
       } -->
     </h2>
 
-    <app-alerts-panel-buttons [type]="'line'" [status]="'triggered'" [data]="dataSource.data"
+    <app-alerts-panel-buttons [type]="'line'" [status]="'archived'" [data]="dataSource.data"
       (refreshClicked)="loadAlerts()" (dataChanged)="loadAlerts()">
     </app-alerts-panel-buttons>
   </div>
@@ -32,15 +32,25 @@
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="alertName">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target"> ALERT NAME </th>
-        <td mat-cell *matCellDef="let alert" class="col-target"> {{ alert.alertName }} </td>
+
+      <ng-container matColumnDef="anchorTimeStr">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target">ANCHOR TIME</th>
+        <td mat-cell *matCellDef="let alert" class="col-target">
+          {{ alert.anchorTimeStr | date:'yyyy-MM-dd HH:mm:ss':'Europe/Moscow' }}
+        </td>
       </ng-container>
 
-      <ng-container matColumnDef="activationTime">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target"> ACTIVATION TIME </th>
-        <td mat-cell *matCellDef="let alert" class="col-target"> {{ alert.activationTimeStr }} </td>
-      </ng-container>
+      <!-- <ng-container matColumnDef="isActive">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target"
+          style="text-align: center; padding: 0;">
+          ACTIVE
+        </th>
+        <td mat-cell *matCellDef="let alert" class="col-target">
+          <mat-slide-toggle [checked]="alert.isActive" color="primary" (click)="$event.stopPropagation()"
+            (change)="toggleActiveState(alert, $event)">
+          </mat-slide-toggle>
+        </td>
+      </ng-container> -->
 
       <ng-container matColumnDef="links">
         <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target"> LINKS </th>
@@ -55,7 +65,8 @@
         <th mat-header-cell *matHeaderCellDef class="col-target"> ACTIONS </th>
         <td mat-cell *matCellDef="let alert" class="col-target">
           <div class="links-pill">
-            <app-chart-actions [linkableObject]="alert" [status]="'triggered'"></app-chart-actions>
+            <app-chart-actions [linkableObject]="alert" [status]="'working'"
+              (alertUpdated)="loadAlerts()"></app-chart-actions>
           </div>
         </td>
       </ng-container>

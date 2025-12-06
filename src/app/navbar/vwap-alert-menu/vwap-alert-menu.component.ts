@@ -31,21 +31,21 @@ export class VwapAlertMenuComponent {
   goToAlertsAtWork() {
     this.closeAndNavigate(() => {
       console.log('Navigate: Alerts at Work');
-      // this.router.navigate(['/alerts-work']);
+      this.router.navigate(['/working-vwap-alerts']);
     });
   }
 
   goToTriggeredAlerts() {
     this.closeAndNavigate(() => {
       console.log('Navigate: Triggered Alerts');
-      // this.router.navigate(['/triggered']);
+      this.router.navigate(['/triggered-vwap-alerts']);
     });
   }
 
   goToArchivedAlerts() {
     this.closeAndNavigate(() => {
       console.log('Navigate: Archived Alerts');
-      // this.router.navigate(['/archived']);
+      this.router.navigate(['/archived-vwap-alerts']);
     });
   }
 

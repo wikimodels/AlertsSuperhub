@@ -97,7 +97,8 @@
     color: #aaa;
     margin-left: auto;
     align-self: flex-start; // Кнопка закрытия всегда сверху справа
-    margin-top: -8px;       // Чуть подтянуть вверх визуально
+    margin-top: -4px;
+    margin-right: -12px   ;   // Чуть подтянуть вверх визуально
     &:hover { color: #fff; }
   }
 }
