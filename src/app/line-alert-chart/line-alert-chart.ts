@@ -38,6 +38,8 @@ import { createLineAlertFromLine } from './functions/create-line-alert';
 // 🚀 FIX: Заменили старый сервис на универсальный
 import { UniversalAlertsApiService } from '../shared/services/api/universal-alerts-api.service';
 import { LineAlert, AlertType, AlertStatus } from '../models/alerts';
+import { PIXEL_TOLERANCE } from '../../environments/environment';
+import { getSmartPriceFormat } from '../shared/functions/get-smart-price-format';
 
 interface OHLCVData extends CandlestickData {
   volume: number;
@@ -161,7 +163,8 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        visible: false,
+        visible: true,
+        autoScale: true,
       },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -169,7 +172,11 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
         secondsVisible: false,
       },
       handleScroll: true,
-      handleScale: true,
+      handleScale: {
+        mouseWheel: true, // Зум колесом (горизонтальный)
+        pinch: true, // Зум перетаскиванием (если нужно)
+        axisPressedMouseMove: true, // ✅ Обязательно true: разрешает тянуть за шкалы (оси)
+      },
     });
 
     if (!this.chartApi) {
@@ -238,6 +245,23 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
 
       console.log(`[Chart] 📊 Категория: ${category}, Биржи: ${exchanges.join(', ')}`);
 
+      // 🧠 START SMART FORMAT LOGIC
+      // 1. Get the last close price to determine the scale
+      const lastClosePrice = chartFormattedData[chartFormattedData.length - 1].close;
+
+      // 2. Calculate the correct format
+      const smartFormat = getSmartPriceFormat(lastClosePrice);
+      console.log(
+        `[Chart] 🧠 Smart Format applied for ${symbol} (${lastClosePrice}):`,
+        smartFormat
+      );
+
+      // 3. Apply the format to the candlestick series
+      this.candleSeries.applyOptions({
+        priceFormat: smartFormat,
+      });
+      // 🧠 END SMART FORMAT LOGIC
+
       const candleData: CandlestickData[] = chartFormattedData.map((d) => ({
         time: d.time,
         open: d.open,
@@ -257,7 +281,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
       this.volumeSeries.setData(volumeData);
       this.chartApi.timeScale().fitContent();
 
-      // Загружаем существующие алерты после загрузки свечей
+      // Load existing alerts after data is ready
       await this.loadHorizontalLines(symbol);
     }
 
@@ -343,26 +367,48 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     if (!this.chartApi) return;
 
     this.chartApi.subscribeClick((param) => {
+      // Нам обязательно нужны координаты точки клика (x, y)
       if (!param?.point || !this.candleSeries) return;
 
-      const clickedPrice = this.candleSeries.coordinateToPrice(param.point.y);
+      // 1. Получаем координату клика по оси Y (в пикселях от верха)
+      const clickY = param.point.y;
+
+      // Если кликнули куда-то, где цены нет вообще
+      const clickedPrice = this.candleSeries.coordinateToPrice(clickY);
       if (clickedPrice === null || clickedPrice === undefined) return;
 
       this.zone.run(async () => {
         let clickedOnLine = false;
 
+        // 2. Пробегаемся по линиям
         for (let i = this.horizontalLines.length - 1; i >= 0; i--) {
           const lineObj = this.horizontalLines[i];
-          const tolerance = lineObj.price * 0.01;
 
-          if (Math.abs(clickedPrice - lineObj.price) <= tolerance) {
-            console.log(`🎯 Клик на существующую линию ID: ${lineObj.id}`);
+          // --- 🔥 ГЛАВНОЕ ИЗМЕНЕНИЕ: ПИКСЕЛЬНЫЙ ТОЛЕРАНС ---
+
+          // Переводим цену конкретной линии в координату Y на экране
+          const lineY = lineObj.series.priceToCoordinate(lineObj.price);
+
+          // Если линия сейчас не видна на экране (null), пропускаем её
+          if (lineY === null) continue;
+
+          // Считаем разницу в пикселях
+          const distanceInPixels = Math.abs(clickY - lineY);
+
+          // Устанавливаем комфортную зону клика (например, 10 пикселей вверх/вниз)
+          // Это работает одинаково удобно и для 60000.00, и для 0.00000123
+
+          if (distanceInPixels <= PIXEL_TOLERANCE) {
+            console.log(
+              `🎯 Клик на существующую линию ID: ${lineObj.id} (dist: ${distanceInPixels}px)`
+            );
             await this.removeHorizontalLine(lineObj, i);
             clickedOnLine = true;
-            break;
+            break; // Удаляем только одну линию за раз, самую верхнюю (по Z-index)
           }
         }
 
+        // Если не попали ни в одну линию — создаем новую
         if (!clickedOnLine) {
           console.log('🎯 Добавляем новую линию...');
           await this.addHorizontalLine(clickedPrice);
@@ -370,9 +416,8 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
       });
     });
 
-    console.log('[Chart] 💡 Подписка на клики установлена.');
+    console.log('[Chart] 💡 Подписка на клики установлена (Pixel Mode).');
   }
-
   // ✅ ADD ALERT
   private async addHorizontalLine(price: number): Promise<void> {
     if (!this.chartApi || this.candleData.length === 0) return;

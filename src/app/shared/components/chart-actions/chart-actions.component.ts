@@ -7,6 +7,7 @@ import { WorkingCoin } from '../../models/working-coin.model';
 import { LineAlert, VwapAlert, AlertStatus } from '../../../models/alerts';
 import { EditLineAlert } from '../../../edit-line-alert/edit-line-alert';
 import { AlertDetails } from '../../../alert-details/alert-details';
+import { EditVwapAlert } from '../../../edit-vwap-alert/edit-vwap-alert';
 
 type LinkableObject = WorkingCoin | LineAlert | VwapAlert;
 
@@ -86,8 +87,25 @@ export class ChartActionsComponent {
           this.alertUpdated.emit();
         }
       });
+    } else if ('anchorTime' in obj) {
+      const dialogRef = this.dialog.open(EditVwapAlert, {
+        data: {
+          alert: obj as VwapAlert,
+          status: this.status(),
+        },
+      });
+
+      // 🚀 НОВОЕ: Слушаем закрытие диалога
+      dialogRef.afterClosed().subscribe((result) => {
+        // Если result === true (мы передавали это в dialogRef.close(true))
+        if (result === true) {
+          // Сообщаем родителю: "Обнови список!"
+          this.alertUpdated.emit();
+          this.dialog.closeAll();
+        }
+      });
     } else {
-      console.warn('Edit is only supported for Line Alerts currently.', obj);
+      console.warn('Edit view is not implemented for this model yet.');
     }
   }
 }

@@ -15,8 +15,6 @@ import { Candle } from './models/kline.model';
 // --- АНИМАЦИИ ---
 import { fadeDataAnimation, fadeSpinnerAnimation } from './shared/animations/fade.animation';
 import { Navbar } from './navbar/navbar';
-import { IconRegistryService } from './shared/services/icon-registry.service';
-import { APP_ICONS } from '../assets/icons-library';
 
 @Component({
   selector: 'app-root',
@@ -31,8 +29,4 @@ import { APP_ICONS } from '../assets/icons-library';
 })
 export class AppComponent {
   // --- Внедрение сервисов ---
-  private iconRegistry = inject(IconRegistryService);
-  constructor() {
-    this.iconRegistry.registerIcons(APP_ICONS);
-  }
 }

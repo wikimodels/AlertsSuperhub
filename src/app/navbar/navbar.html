@@ -1,13 +1,27 @@
 <!-- Вся HTML-разметка для navbar теперь здесь -->
 <mat-toolbar>
   <span>Alerts Superhub</span>
-  <app-vwap-alert-menu></app-vwap-alert-menu>
   <app-line-alert-menu></app-line-alert-menu>
+  <app-vwap-alert-menu></app-vwap-alert-menu>
   <span class="spacer"></span>
-  <button mat-icon-button aria-label="Refresh button" routerLink="/coins">
-    <mat-icon>refresh</mat-icon>
+  <button mat-icon-button aria-label="Coins" routerLink="/coins">
+    <mat-icon svgIcon="dollar"></mat-icon>
   </button>
-  <button mat-icon-button aria-label="Refresh button" routerLink="/working-coins">
-    <mat-icon>delete</mat-icon>
+  <button mat-icon-button aria-label="Working Coins" routerLink="/working-coins">
+    <mat-icon svgIcon="hammer-white"></mat-icon>
   </button>
+
+  @if (user$ | async; as currentUser) {
+  <div class="user-profile">
+    <span class="user-name">Hi, {{ currentUser.displayName?.split(' ')?.[0] }}!</span>
+    <img [src]="currentUser.photoURL" alt="Avatar" class="user-avatar">
+    <button mat-icon-button (click)="logout()">
+      <mat-icon svgIcon="logout"></mat-icon>
+    </button>
+  </div>
+  } @else {
+  <button mat-icon-button (click)="login()">
+    <mat-icon svgIcon="login"></mat-icon>
+  </button>
+  }
 </mat-toolbar>

@@ -18,25 +18,102 @@
   // Reduce padding
   padding: 0 16px !important;
 
+  // Perfect vertical alignment
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+
   // Smaller font
   font-size: 14px !important;
+
+  // Logo/Title text
+  > span:first-child {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 48px; // Match toolbar height for perfect centering
+    margin-right: 12px;
+  }
+
+  // Menu components alignment
+  app-vwap-alert-menu,
+  app-line-alert-menu {
+    display: flex;
+    align-items: center;
+    height: 48px;
+  }
 
   // Compact buttons and icons
   .mat-mdc-icon-button {
     --mdc-icon-button-state-layer-size: 40px;
-    width: 40px;
-    height: 40px;
-    padding: 8px;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    line-height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  button {
+    margin: 0 !important;
   }
 }
 
 .spacer {
   flex: 1 1 auto;
+}
+
+// User profile section - perfect alignment
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+
+  .user-name {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 48px; // Match toolbar height
+    white-space: nowrap;
+
+    // Hide on small screens
+    @media (max-width: 480px) {
+      display: none;
+    }
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: border-color 0.2s ease;
+    flex-shrink: 0; // Don't shrink avatar
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+  }
+
+  // Logout button aligned properly
+  .mat-mdc-icon-button {
+    margin-left: 4px;
+  }
+}
+
+// Login button when user is not logged in
+:host ::ng-deep mat-toolbar > button:last-child {
+  margin-left: 8px;
 }

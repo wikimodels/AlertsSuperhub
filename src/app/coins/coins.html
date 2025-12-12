@@ -8,7 +8,8 @@
 
   <app-search-filter (searchChange)="onFilterChange($event)"></app-search-filter>
 
-  <h2 class="header-title">Coins {{ selectionCount() > 0 ? '(' + selectionCount() + ')' : '' }}</h2>
+  <h2 class="header-title">Coins <span class="navbar-color">({{selectionCount() > 0 ? selectionCount():
+      '0'}}/{{coins().length}})</span></h2>
 
   <div class="header-actions">
 

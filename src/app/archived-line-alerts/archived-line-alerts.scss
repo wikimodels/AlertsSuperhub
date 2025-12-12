@@ -1,6 +1,6 @@
 // 👇 1. Используем @use вместо @import
 // "as alerts" — это имя, через которое мы будем обращаться к файлу
 @use '../shared/styles/_alert_table.scss' as alerts;
-
+@use '../shared/styles/_variables.scss' as vars;
 // 👇 2. Вызываем миксин через точку: имя_файла.имя_миксина
-@include alerts.alert-table-styles(#7b1fa2);
+@include alerts.alert-table-styles(vars.$line-alerts-archived);

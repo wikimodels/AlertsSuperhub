@@ -42,7 +42,7 @@ import { AlertsPanelButtonsComponent } from '../shared/components/alerts-panel-b
 })
 export class TriggeredVwapAlerts implements OnInit {
   private api = inject(UniversalAlertsApiService);
-  public selectionService = inject(GenericSelectionService<LineAlert>);
+  public selectionService = inject(GenericSelectionService<VwapAlert>);
 
   private selectionSignal = toSignal(this.selectionService.selectionChanges$, {
     initialValue: [],

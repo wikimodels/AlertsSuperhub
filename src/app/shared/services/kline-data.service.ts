@@ -8,6 +8,7 @@ import { TF, MarketData } from '../../models/kline.model';
 import { KlineCacheService } from './cache/kline-cache.service';
 import { NotificationService, NotificationType } from './notification.service';
 import { CoinsApiService } from './api/coins-api.service';
+import { BUFFER_MS } from '../../../environments/environment';
 
 // --- МОДЕЛИ ---
 
@@ -149,7 +150,7 @@ export class KlineDataService {
       const currentTime = Date.now();
 
       // Ваше правило:
-      const expiryTime = lastOpenTime + 2 * timeframeMs;
+      const expiryTime = lastOpenTime + 2 * timeframeMs + BUFFER_MS;
 
       // true = Просрочено (Надо качать)
       // false = Свежее (Берем из кеша)

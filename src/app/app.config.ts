@@ -2,18 +2,20 @@ import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
-  importProvidersFrom,
+  inject,
+  provideAppInitializer,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
-// 📝 Для поддержки Reactive Forms (Правильный способ)
-import { ReactiveFormsModule } from '@angular/forms';
-
 // 🔧 Глобальные настройки для Angular Material (пример)
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideAuth, getAuth } from '@angular/fire/auth';
+import { environment } from '../environments/environment';
+import { IconsRegisterService } from './shared/services/icons-register.service';
+import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -29,6 +31,15 @@ export const appConfig: ApplicationConfig = {
     // --- HTTP-клиент с поддержкой Interceptors ---
     provideHttpClient(withInterceptors([])),
 
+    // --- Firebase Setup ---
+    provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
+    provideAuth(() => getAuth()),
+
+    // --- Init ---
+    provideAppInitializer(() => {
+      const register = inject(IconsRegisterService);
+      return register.registerIcons();
+    }),
     // --- Провайдеры для Angular Material ---
     {
       provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,

@@ -3,15 +3,15 @@
   <div class="dialog-header">
     <img [src]="'assets/logo/' + alert.symbol.toLowerCase() + '.svg'" (error)="onLogoError($event)" [alt]="alert.symbol"
       class="header-logo">
-    <h2>Edit Line Alert: <span class="accent">{{ alert.symbol }}</span></h2>
+    <h2>Edit VWAP Alert: <span class="accent">{{ alert.symbol }}</span></h2>
   </div>
 
   <form [formGroup]="form" class="alert-form">
 
     <div class="form-row">
       <mat-form-field appearance="outline" class="compact-field">
-        <mat-label>Price (Read-only)</mat-label>
-        <input matInput type="number" formControlName="price">
+        <mat-label>Achor Time (Read-only)</mat-label>
+        <input matInput type="string" formControlName="anchorTime">
       </mat-form-field>
 
     </div>

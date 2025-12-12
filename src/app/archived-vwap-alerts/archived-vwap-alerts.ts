@@ -106,34 +106,4 @@ export class ArchivedVwapAlerts implements OnInit {
     }
     this.alertsCount.set(this.dataSource.filteredData.length);
   }
-
-  // Логика переключения Active в таблице (остается здесь, так как привязана к строке)
-  async toggleActiveState(alert: VwapAlert, event: MatSlideToggleChange) {
-    const newValue = event.checked;
-    const previousValue = !newValue;
-
-    if (!alert.id) {
-      console.error('❌ Ошибка: У алерта нет ID!', alert);
-      event.source.checked = previousValue;
-      return;
-    }
-
-    alert.isActive = newValue;
-
-    try {
-      const success = await this.api.updateAlertAsync('line', 'working', alert.id, {
-        isActive: newValue,
-      });
-
-      if (!success) {
-        console.warn('⚠️ API вернул false (не обновлено)');
-        alert.isActive = previousValue;
-        event.source.checked = previousValue;
-      }
-    } catch (err) {
-      alert.isActive = previousValue;
-      event.source.checked = previousValue;
-      console.error('❌ Failed to update active state', err);
-    }
-  }
 }

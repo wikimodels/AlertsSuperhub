@@ -38,6 +38,7 @@ import { VwapAlert } from '../models/alerts';
 // 🚀 FIX: Заменили старый сервис на универсальный
 import { UniversalAlertsApiService } from '../shared/services/api/universal-alerts-api.service';
 import { AlertType, AlertStatus } from '../models/alerts';
+import { getSmartPriceFormat } from '../shared/functions/get-smart-price-format';
 
 interface OHLCVData extends CandlestickData {
   volume: number;
@@ -169,7 +170,8 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        visible: false,
+        visible: true,
+        autoScale: true,
       },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -245,6 +247,20 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
       });
 
       console.log(`[VwapChart] 📊 Категория: ${category}, Биржи: ${exchanges.join(', ')}`);
+
+      // 🧠 START SMART FORMAT LOGIC
+      // 1. Берем цену закрытия последней свечи
+      const lastClosePrice = chartFormattedData[chartFormattedData.length - 1].close;
+
+      // 2. Вычисляем формат
+      const smartFormat = getSmartPriceFormat(lastClosePrice);
+      console.log(`[VwapChart] 🧠 Smart Format для ${symbol} (${lastClosePrice}):`, smartFormat);
+
+      // 3. Применяем к серии свечей
+      this.candleSeries.applyOptions({
+        priceFormat: smartFormat,
+      });
+      // 🧠 END SMART FORMAT LOGIC
 
       const candleData: OHLCVData[] = chartFormattedData.map((d) => ({
         time: d.time,
@@ -481,7 +497,8 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
       color,
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
-      lastValueVisible: true,
+      lastValueVisible: false,
+      priceLineVisible: false,
       crosshairMarkerVisible: true,
     });
 

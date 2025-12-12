@@ -58,7 +58,24 @@ export class UniversalAlertsApiService {
 
   public async getAlertsAsync<T>(type: AlertType, status: AlertStatus): Promise<T[]> {
     const res = await firstValueFrom(this.getAlerts<T>(type, status));
-    return res.data || [];
+    const data = res.data || [];
+
+    // 👇 АВТОМАТИЧЕСКАЯ СОРТИРОВКА
+    return data.sort((a: any, b: any) => {
+      // 1. Если статус 'triggered' — сортируем по времени срабатывания (activationTime)
+      if (status === 'triggered') {
+        const timeA = a.activationTime || 0;
+        const timeB = b.activationTime || 0;
+        return timeB - timeA; // Новые сверху
+      }
+
+      // 2. Для 'working' и 'archived' — сортируем по времени создания (createdAt / creationTime)
+      // (Проверяем оба варианта названия поля, так как в БД может быть по-разному)
+      const dateA = new Date(a.createdAt || a.creationTime || 0).getTime();
+      const dateB = new Date(b.createdAt || b.creationTime || 0).getTime();
+
+      return dateB - dateA; // Новые сверху
+    });
   }
 
   // ============================================
