@@ -5,3 +5,12 @@
 
 // 👇 2. Вызываем миксин через точку: имя_файла.имя_миксина
 @include alerts.alert-table-styles(vars.$line-alerts-working);
+
+.clickable-name {
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #fff !important;
+    }
+}

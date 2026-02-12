@@ -17,6 +17,8 @@ import { ChartActionsComponent } from '../shared/components/chart-actions/chart-
 import { GenericSelectionService } from '../shared/services/generic.selection.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ScrollResetDirective } from '../directives/scroll-reset.directive';
+import { CopyPriceDirective } from '../directives/copy-price.directive';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AlertsPanelButtonsComponent } from '../shared/components/alerts-panel-buttons/alerts-panel-buttons';
 
 @Component({
@@ -36,6 +38,8 @@ import { AlertsPanelButtonsComponent } from '../shared/components/alerts-panel-b
     MatButtonModule,
     MatCheckboxModule,
     MatSlideToggleModule,
+    MatTooltipModule,
+    CopyPriceDirective,
     // 👇 Добавляем компонент в импорты
     AlertsPanelButtonsComponent,
   ],
@@ -85,6 +89,14 @@ export class WorkingLineAlerts implements OnInit {
     this.isLoading.set(true);
     try {
       const data = await this.api.getAlertsAsync<LineAlert>('line', 'working');
+
+      // 🚀 Format names to remove spaces around @
+      data.forEach(a => {
+        if (a.alertName) {
+          a.alertName = a.alertName.replace(/\s@\s/g, '@');
+        }
+      });
+
       this.dataSource.data = data;
       this.alertsCount.set(data.length);
       this.selectionService.clear();

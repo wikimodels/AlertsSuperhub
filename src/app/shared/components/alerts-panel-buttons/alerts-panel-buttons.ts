@@ -4,13 +4,15 @@ import { PanelButtonComponent } from '../panel-button/panel-button.component';
 import { CoinWindowService } from '../../services/coin-window.service';
 import { GenericSelectionService } from '../../services/generic.selection.service';
 import { UniversalAlertsApiService } from '../../services/api/universal-alerts-api.service';
-import { AlertType, AlertStatus, LineAlert, VwapAlert } from '../../../models/alerts'; // Убедись в путях
+import { AlertType, AlertStatus, LineAlert, VwapAlert } from '../../../models/alerts';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { WorkingCoin } from '../../models/working-coin.model';
 
 @Component({
   selector: 'app-alerts-panel-buttons',
   standalone: true,
-  imports: [CommonModule, PanelButtonComponent],
+  imports: [CommonModule, PanelButtonComponent, MatDialogModule],
   templateUrl: './alerts-panel-buttons.html',
   // styleUrl: './alerts-panel-buttons.scss' // Если нужен, создай пустой или перенеси стили
 })
@@ -19,6 +21,7 @@ export class AlertsPanelButtonsComponent {
   private coinWindowService = inject(CoinWindowService);
   public selectionService = inject(GenericSelectionService<any>); // <any> чтобы принимать и LineAlert и VwapAlert
   private api = inject(UniversalAlertsApiService);
+  private dialog = inject(MatDialog);
 
   // 👇 Входящие параметры (чтобы компонент знал, с чем работает)
   @Input({ required: true }) type!: AlertType; // 'line' | 'vwap'
@@ -100,7 +103,21 @@ export class AlertsPanelButtonsComponent {
     const ids = selected.map((a) => a.id).filter((id): id is string => !!id);
     if (ids.length === 0) return;
 
-    if (!confirm(`Delete ${ids.length} alerts?`)) return;
+    // 🚀 Stylish & Larger Dialog
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '600px', // Much larger width
+      // height: 'auto', // Let content dictate height, but ensure it's spacious
+      panelClass: 'custom-confirm-dialog', // We'll verify if this class is used/needed
+      data: {
+        title: 'Delete Alerts',
+        message: `Are you sure you want to delete <b>${ids.length}</b> alerts?<br><span style="font-size: 0.9em; opacity: 0.7">This action cannot be undone.</span>`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      },
+    });
+
+    const result = await dialogRef.afterClosed().toPromise();
+    if (!result) return;
 
     // Используем универсальный сервис
     const count = await this.api.deleteAlertsBatchAsync(this.type, this.status, ids);

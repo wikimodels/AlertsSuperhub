@@ -34,7 +34,9 @@
 
       <ng-container matColumnDef="alertName">
         <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-target"> ALERT NAME </th>
-        <td mat-cell *matCellDef="let alert" class="col-target"> {{ alert.alertName }} </td>
+        <td mat-cell *matCellDef="let alert" class="col-target clickable-name" [appCopyPrice]="alert.price">
+          {{ alert.alertName }}
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="isActive">

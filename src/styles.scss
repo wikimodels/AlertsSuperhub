@@ -3,18 +3,17 @@
 
 // 1. Определяем палитру (M3).
 html {
-  @include mat.theme((
-    color: (
-      primary: mat.$magenta-palette,
-      accent: mat.$cyan-palette, // <-- Вот эта строка, 'cyan' (голубой)
-      tertiary: mat.$violet-palette,
-    ),
-    typography: Roboto,
-    density: 0,
-  ));
+  @include mat.theme((color: (primary: mat.$magenta-palette,
+        accent: mat.$cyan-palette, // <-- Вот эта строка, 'cyan' (голубой)
+        tertiary: mat.$violet-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    ));
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -65,7 +64,56 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-.navbar-color{
-  color:#c519c5
+.navbar-color {
+  color: #c519c5
 }
 
+
+/* 🚀 GLOBAL DIALOG OVERRIDES (To fix scrollbars & layout) */
+.custom-confirm-dialog .mat-mdc-dialog-container {
+  /* Ensure the container itself doesn't clip */
+  overflow: visible !important;
+}
+
+.custom-confirm-dialog .mat-mdc-dialog-surface {
+  /* The actual background card */
+  background-color: #000000 !important;
+  /* Maximally Black */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Subtle border for visibility */
+  border-radius: 12px !important;
+  padding: 32px !important;
+  /* Global padding for the whole card */
+  overflow: visible !important;
+  /* KEY: No scrollbars */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fix the content area to prevent internal scrolling */
+.custom-confirm-dialog .mat-mdc-dialog-content {
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  /* We use parent padding */
+  margin: 24px 0 !important;
+}
+
+/* Fix Actions Alignment */
+.custom-confirm-dialog .mat-mdc-dialog-actions {
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: auto !important;
+  justify-content: flex-end;
+}
+
+/* 🚀 FIX TITLE ALIGNMENT */
+.custom-confirm-dialog .mat-mdc-dialog-title {
+  text-align: left !important;
+  padding: 0 !important;
+  margin: 0 0 20px 0 !important;
+  /* Bottom spacing */
+  display: block !important;
+  width: 100% !important;
+}

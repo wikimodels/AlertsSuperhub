@@ -1,0 +1,58 @@
+/* Component-level styles for TEXT and COLORS only */
+:host {
+    display: block;
+}
+
+h2 {
+    display: block;
+    width: 100%;
+    text-align: left;
+    /* Explicitly align left */
+    margin: 0 0 16px 0;
+    /* Add bottom margin for spacing */
+    font-size: 1.8rem;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1.2;
+}
+
+/* We don't style mat-dialog-content layout here, just the text inside P */
+p {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Styles passed via innerHTML */
+::ng-deep b,
+::ng-deep strong {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #ff4081;
+    /* Pink */
+}
+
+/* Button Styles */
+button[mat-button] {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.05);
+    }
+}
+
+button[mat-flat-button] {
+    background-color: #d32f2f;
+    color: #fff;
+    font-size: 1rem;
+    padding: 8px 32px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
