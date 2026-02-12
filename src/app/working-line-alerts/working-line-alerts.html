@@ -1,9 +1,3 @@
-@if (isLoading()) {
-<div class="loading-overlay">
-  <app-loading-spinner></app-loading-spinner>
-</div>
-} @else {
-
 <div class="layout-container">
 
   <div class="coins-header">
@@ -20,6 +14,12 @@
       (refreshClicked)="loadAlerts()" (dataChanged)="loadAlerts()">
     </app-alerts-panel-buttons>
   </div>
+
+  @if (isLoading()) {
+  <div class="loading-overlay">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+  } @else {
 
   <div class="table-wrapper" [appScrollReset]="dataSource.data">
 
@@ -93,5 +93,5 @@
     </mat-paginator>
   </div>
 
+  }
 </div>
-}

@@ -69,7 +69,7 @@
 
 .header-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 400;
   color: #fff;
   white-space: nowrap;
@@ -87,7 +87,7 @@
 .chart-content {
   flex-grow: 1;
   margin-top: 24px;
-
+  position: relative; // 🚀 FIX: Чтобы лоадер позиционировался внутри
 }
 
 .chart-container-wrapper {
@@ -96,6 +96,7 @@
 }
 
 /* === Loading Overlay === */
+// 🚀 .chart-loading-overlay (Restored & Positioned like Coins)
 .chart-loading-overlay {
   position: absolute;
   top: 0;
@@ -105,6 +106,7 @@
   z-index: 10;
   display: flex;
   justify-content: center;
-  align-items: center;
-  background-color: rgba(20, 20, 20, 0.7);
+  align-items: flex-start; // 🚀 Align to top
+  padding-top: 95px; // 🚀 Offset from top (55px + 40px requested)
+  background-color: transparent; // Or match background if needed to hide chart glitches
 }

@@ -1,4 +1,4 @@
-<div class="coins-header" [class.is-hidden]="isLoading()">
+<div class="coins-header">
   <div class="header-spacer-left"></div>
 
   <!-- Логотип + Заголовок (по центру) -->
@@ -18,19 +18,18 @@
       [tooltipText]="'График BTC на TradingView'"></app-panel-button>
     <app-panel-button (click)="goToVwapAlertCharts()" [iconPath]="'candlestick_chart'" [tooltipText]="'VWAP Alerts'">
     </app-panel-button>
-    <app-panel-button [iconPath]="'close'" (actionClick)="closeWindows()"
-      [tooltipText]="'Закрыть все окна'"></app-panel-button>
+
   </div>
 </div>
 
 <!-- Контейнер графика -->
-<div class="chart-content" [class.is-hidden]="isLoading()">
-  <div #chartContainer class="chart-container-wrapper"></div>
-</div>
+<div class="chart-content">
+  <div #chartContainer class="chart-container-wrapper" [class.is-hidden]="isLoading()"></div>
 
-<!-- Лоадер -->
-@if (isLoading()) {
-<div class="chart-loading-overlay">
-  <app-loading-spinner></app-loading-spinner>
+  <!-- Лоадер -->
+  @if (isLoading()) {
+  <div class="chart-loading-overlay">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+  }
 </div>
-}

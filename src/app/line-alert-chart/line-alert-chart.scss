@@ -80,6 +80,7 @@
 .chart-content {
   flex-grow: 1;
   margin-top: 24px;
+  position: relative; // 🚀 FIX: Чтобы лоадер позиционировался внутри
 }
 
 .chart-container-wrapper {
@@ -87,6 +88,7 @@
   height: 100%;
 }
 
+/* === Loading Overlay === */
 /* === Loading Overlay === */
 .chart-loading-overlay {
   position: absolute;
@@ -98,5 +100,5 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(20, 20, 20, 0.7);
+  // background-color: rgba(20, 20, 20, 0.7); // Можно убрать фон
 }

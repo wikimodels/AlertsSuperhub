@@ -30,6 +30,7 @@ import {
   HistogramSeries,
   LineSeries,
   Time,
+  TickMarkType,
 } from 'lightweight-charts';
 import { ChartDataService } from '../shared/services/chart-data.service';
 import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
@@ -129,7 +130,13 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
   private getCurrentCoinAsArray(): WorkingCoin[] {
     const sym = this.symbol();
     if (!sym) return [];
-    return [{ symbol: sym, category: this.category() } as WorkingCoin];
+    return [
+      {
+        symbol: sym,
+        category: this.category(),
+        exchanges: this.exchanges(),
+      } as WorkingCoin,
+    ];
   }
 
   public async openTradingView(): Promise<void> {
@@ -146,9 +153,7 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
     );
   }
 
-  public closeWindows(): void {
-    this.coinWindowService.closeAllWindows();
-  }
+
 
   // ============================================
   // Chart Initialization & Data Loading
@@ -173,10 +178,66 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
         visible: true,
         autoScale: true,
       },
+      localization: {
+        timeFormatter: (timestamp: number) => {
+          return new Date(timestamp * 1000).toLocaleString('ru-RU', {
+            timeZone: 'Europe/Moscow',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        },
+      },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: (
+          time: number,
+          tickMarkType: TickMarkType,
+          locale: string
+        ) => {
+          const date = new Date(time * 1000);
+          switch (tickMarkType) {
+            case TickMarkType.Year:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                year: 'numeric',
+              });
+            case TickMarkType.Month:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                month: 'short',
+              });
+            case TickMarkType.DayOfMonth:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                day: 'numeric',
+                month: 'short',
+              });
+            case TickMarkType.Time:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+            case TickMarkType.TimeWithSeconds:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              });
+            default:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+          }
+        },
       },
       handleScroll: true,
       handleScale: true,
@@ -268,12 +329,12 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
         high: d.high,
         low: d.low,
         close: d.close,
-        volume: d.volume,
+        volume: Number(d.volume) || 0, // ✅ FIX: Ensure volume is number for VWAP calc
       }));
 
       const volumeData: HistogramData[] = chartFormattedData.map((d) => ({
         time: d.time,
-        value: d.volume,
+        value: Number(d.volume) || 0, // ✅ FIX: Ensure value is a number
         color: d.close >= d.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
       }));
 
@@ -350,10 +411,17 @@ export class VwapAlertChart implements AfterViewInit, OnDestroy {
       cumulativePV += typicalPrice * bar.volume;
       cumulativeVolume += bar.volume;
 
-      vwapData.push({
-        time: bar.time,
-        value: cumulativePV / cumulativeVolume,
-      });
+      if (cumulativeVolume === 0) {
+        vwapData.push({
+          time: bar.time,
+          value: typicalPrice, // Fallback to price if no volume
+        });
+      } else {
+        vwapData.push({
+          time: bar.time,
+          value: cumulativePV / cumulativeVolume,
+        });
+      }
     }
 
     return vwapData;

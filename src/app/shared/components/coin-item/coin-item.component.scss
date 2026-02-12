@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 8px 6px 6px;
+  padding: 4px 6px 4px 4px;
   border-radius: 99px;
   background-color: var(--mat-sys-primary-container);
 
@@ -37,14 +37,14 @@
 .coin-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 // 🚀 ИЗМЕНЕНО: Стиль главного логотипа (стал крупнее)
 .coin-logo {
   border-radius: 50%;
-  width: 28px; // (был 20px)
-  height: 28px; // (был 20px)
+  width: 22px; // (был 28px) -> уменьшили на ~20%
+  height: 22px; // (был 28px)
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -53,7 +53,7 @@
 .coin-symbol {
   padding-right: 3px;
   font-weight: 300; // (был 200)
-  font-size: 0.8rem;
+  font-size: 0.7rem; // (был 0.8rem)
   color: var(--mat-sys-on-surface);
 }
 
@@ -61,14 +61,14 @@
 .coin-links {
   display: flex;
   align-items: center;
-  gap: 6px; // (был 4px) "Больше воздуха"
+  gap: 4px; // (был 6px) "Больше воздуха" -> чуть меньше
 }
 
 // 🚀 ДОБАВЛЕНО: Стиль для иконок сервисов (Binance, TV...)
 .service-logo {
   // Иконки сервисов меньше, чем главный логотип
-  width: 18px; // (был 20px)
-  height: 18px; // (был 20px)
+  width: 14px; // (был 18px)
+  height: 14px; // (был 18px)
   object-fit: contain; // Сохраняем пропорции (не cover)
   border-radius: 50%;  // Небольшое скругление (НЕ 50%)
   cursor: pointer;

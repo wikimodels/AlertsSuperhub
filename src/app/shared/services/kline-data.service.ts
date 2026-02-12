@@ -136,28 +136,56 @@ export class KlineDataService {
    */
   private isDataStale(data: MarketData, timeframe: Timeframe): boolean {
     try {
-      // Ищем последнюю свечу у первой монеты
-      const lastCoin = data.data[0];
-      const lastCandle = lastCoin.candles[lastCoin.candles.length - 1];
+      if (!data.data || data.data.length === 0) {
+        console.warn(`[Оркестратор] ${timeframe}: Кеш пуст (нет монет). Считаем устаревшим.`);
+        return true;
+      }
 
-      if (!lastCandle) return true; // Если свечей нет, данные "битые"
+      // 1. Проверяем время по первой монете (для скорости)
+      const firstCoin = data.data[0];
+      const firstCandle = firstCoin.candles[firstCoin.candles.length - 1];
 
-      const lastOpenTime = lastCandle.openTime; // Это ваш "openTime"
+      if (!firstCandle) return true;
+
+      const lastOpenTime = firstCandle.openTime;
       const timeframeMs = this.parseTimeframeToMs(timeframe);
 
-      if (timeframeMs === 0) return false; // Неизвестный TF, считаем свежим
+      if (timeframeMs !== 0) {
+        const currentTime = Date.now();
+        const expiryTime = lastOpenTime + 2 * timeframeMs + BUFFER_MS;
 
-      const currentTime = Date.now();
+        if (currentTime > expiryTime) {
+          console.log(
+            `[Оркестратор] ${timeframe}: ⏰ Кеш устарел по времени (Expiry: ${new Date(
+              expiryTime
+            ).toLocaleTimeString()}).`
+          );
+          return true; // Сразу выходим, если время вышло
+        }
+      }
 
-      // Ваше правило:
-      const expiryTime = lastOpenTime + 2 * timeframeMs + BUFFER_MS;
+      // 2. 🚀 NEW: Проверяем ВСЕ монеты на наличие Volume (Критическая проверка целостности)
+      // Если хотя бы одна монета "битая", перекачиваем всё.
+      for (const coin of data.data) {
+        if (!coin.candles || coin.candles.length === 0) {
+          console.warn(`[Оркестратор] ${timeframe}: ⚠️ Битая монета ${coin.symbol} (нет свечей).`);
+          return true;
+        }
 
-      // true = Просрочено (Надо качать)
-      // false = Свежее (Берем из кеша)
-      return currentTime > expiryTime;
+        const lastCandle = coin.candles[coin.candles.length - 1];
+
+        if (lastCandle.volume === undefined || lastCandle.volume === null) {
+          console.warn(
+            `[Оркестратор] ${timeframe}: ⚠️ Битая монета ${coin.symbol} (нет объема). Считаем весь кеш устаревшим -> ПЕРЕКАЧИВАЕМ.`
+          );
+          return true;
+        }
+      }
+
+      console.log(`[Оркестратор] ${timeframe}: ✅ Кеш свежий и валидный (все монеты с объемом).`);
+      return false;
     } catch (e) {
-      // Если структура данных битая (напр. data.data[0] нет),
-      // лучше скачать заново.
+      console.warn(`[Оркестратор] ${timeframe}: ❌ Ошибка проверки свежести (структура битая).`, e);
       return true;
     }
   }

@@ -29,6 +29,7 @@ import {
   CandlestickSeries,
   HistogramSeries,
   LineSeries,
+  TickMarkType,
 } from 'lightweight-charts';
 import { ChartDataService } from '../shared/services/chart-data.service';
 import { PanelButtonComponent } from '../shared/components/panel-button/panel-button.component';
@@ -122,7 +123,13 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
   private getCurrentCoinAsArray(): WorkingCoin[] {
     const sym = this.symbol();
     if (!sym) return [];
-    return [{ symbol: sym, category: this.category() } as WorkingCoin];
+    return [
+      {
+        symbol: sym,
+        category: this.category(),
+        exchanges: this.exchanges(),
+      } as WorkingCoin,
+    ];
   }
 
   public async openTradingView(): Promise<void> {
@@ -139,9 +146,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
     );
   }
 
-  public closeWindows(): void {
-    this.coinWindowService.closeAllWindows();
-  }
+
 
   // ============================================
   // Chart Initialization & Data Loading
@@ -166,10 +171,66 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
         visible: true,
         autoScale: true,
       },
+      localization: {
+        timeFormatter: (timestamp: number) => {
+          return new Date(timestamp * 1000).toLocaleString('ru-RU', {
+            timeZone: 'Europe/Moscow',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        },
+      },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: (
+          time: number,
+          tickMarkType: TickMarkType,
+          locale: string
+        ) => {
+          const date = new Date(time * 1000);
+          switch (tickMarkType) {
+            case TickMarkType.Year:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                year: 'numeric',
+              });
+            case TickMarkType.Month:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                month: 'short',
+              });
+            case TickMarkType.DayOfMonth:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                day: 'numeric',
+                month: 'short',
+              });
+            case TickMarkType.Time:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+            case TickMarkType.TimeWithSeconds:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              });
+            default:
+              return date.toLocaleString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+          }
+        },
       },
       handleScroll: true,
       handleScale: {
@@ -272,7 +333,7 @@ export class LineAlertChart implements AfterViewInit, OnDestroy {
 
       const volumeData: HistogramData[] = chartFormattedData.map((d) => ({
         time: d.time,
-        value: d.volume,
+        value: Number(d.volume) || 0, // ✅ FIX: Ensure value is a number
         color: d.close >= d.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
       }));
 

@@ -5,14 +5,14 @@
 .coin-links {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 4px;
+  gap: 3px;
+  padding: 0 3px;
 }
 
 /* Контейнер: Черный круг */
 .circle-btn {
-  width: 28px;
-  height: 28px;
+  width: 21px; // (был 28px)
+  height: 21px; // (был 28px)
   background-color: #000000;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -27,8 +27,8 @@
 
 /* Изображение внутри круга */
 .circle-btn img {
-  width: 18px;
-  height: 18px;
+  width: 13px; // (был 18px)
+  height: 13px; // (был 18px)
   object-fit: contain;
 
   /* 🚀 ИЗМЕНЕНО: Ставим 0.7 (было 1), чтобы при наведении был контраст */

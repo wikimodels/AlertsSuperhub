@@ -18,6 +18,8 @@ import { calculateSlope } from '../../../calculations/slope';
 import { analyzeLineStates } from '../../../calculations/states';
 import { calculateVZO } from '../../../calculations/vzo';
 import { calculateZScore } from '../../../calculations/z-score';
+// --- ✅ ИМПОРТ: Добавляем обе функции энтропии ---
+import { calculateEntropy, calculateSignEntropy } from '../../../calculations/entropy';
 import { Candle, MarketData, PriceSeries } from '../../../models/kline.model';
 
 // Вспомогательный интерфейс для динамического добавления индикаторов
@@ -90,6 +92,14 @@ export class IndicatorPipelineService {
       const zScoreVolDelta = calculateZScore(priceSeries.volumeDelta || [], 50);
       const zScoreFunding = calculateZScore(priceSeries.fundingRate || [], 50);
       const zScoreOI = calculateZScore(priceSeries.openInterest || [], 50);
+
+      // --- ✅ ЭНТРОПИЯ: Длинное окно (100) ---
+      const entropyResult100 = calculateEntropy(priceSeries, 100);
+      const signEntropyResult100 = calculateSignEntropy(priceSeries, 100);
+
+      // --- ✅ ЭНТРОПИЯ: Короткое окно (50) для актуальности ---
+      const entropyResult50 = calculateEntropy(priceSeries, 50);
+      const signEntropyResult50 = calculateSignEntropy(priceSeries, 50);
 
       // --- SLOPE ---
       const slopePeriod = 5;
@@ -246,6 +256,12 @@ export class IndicatorPipelineService {
         (candle as CandleWithIndicators)['volumeDeltaZScore'] = zScoreVolDelta[index];
         (candle as CandleWithIndicators)['fundingRateZScore'] = zScoreFunding[index];
         (candle as CandleWithIndicators)['openInterestZScore'] = zScoreOI[index];
+
+        // --- ✅ ДОБАВЛЕНИЕ ЭНТРОПИИ (4 показателя) ---
+        (candle as CandleWithIndicators)['entropy100'] = entropyResult100;
+        (candle as CandleWithIndicators)['signEntropy100'] = signEntropyResult100;
+        (candle as CandleWithIndicators)['entropy50'] = entropyResult50;
+        (candle as CandleWithIndicators)['signEntropy50'] = signEntropyResult50;
 
         // SLOPE
         (candle as CandleWithIndicators)['slopeEma50'] = slopeEma50[index];

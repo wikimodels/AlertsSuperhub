@@ -1,16 +1,25 @@
-@if (isLoading()) {
-<div class="loading-overlay">
-  <app-loading-spinner></app-loading-spinner>
-</div>
-} @else {
 <div class="layout-container">
+
   <div class="coins-header">
     <app-search-filter (searchChange)="onFilterChange($event)"></app-search-filter>
-    <h2 class="header-title">Triggered VWAP Alerts</h2>
+
+    <h2 class="header-title">
+      Triggered VWAP Alerts
+      <!-- @if (alertsCount() > 0) {
+      <span>({{ alertsCount() }})</span>
+      } -->
+    </h2>
+
     <app-alerts-panel-buttons [type]="'vwap'" [status]="'triggered'" [data]="dataSource.data"
       (refreshClicked)="loadAlerts()" (dataChanged)="loadAlerts()">
     </app-alerts-panel-buttons>
   </div>
+
+  @if (isLoading()) {
+  <div class="loading-overlay">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+  } @else {
 
   <div class="table-wrapper" [appScrollReset]="dataSource.data">
     <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z0 alerts-table">
@@ -77,5 +86,5 @@
       aria-label="Select page of alerts">
     </mat-paginator>
   </div>
+  }
 </div>
-}
