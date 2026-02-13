@@ -97,8 +97,8 @@ export const routes: Routes = [
           import('./archived-vwap-alerts/archived-vwap-alerts').then((m) => m.ArchivedVwapAlerts),
       },
 
-      // Дефолтный редирект для залогиненного юзера (например, на сработавшие алерты)
-      { path: '', redirectTo: 'triggered-line-alerts', pathMatch: 'full' },
+      // Дефолтный редирект для залогиненного юзера на рабочие алерты
+      { path: '', redirectTo: 'working-line-alerts', pathMatch: 'full' },
     ],
   },
 

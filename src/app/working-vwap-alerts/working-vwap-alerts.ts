@@ -128,7 +128,7 @@ export class WorkingVwapAlerts implements OnInit {
     alert.isActive = newValue;
 
     try {
-      const success = await this.api.updateAlertAsync('line', 'working', alert.id, {
+      const success = await this.api.updateAlertAsync('vwap', 'working', alert.id, {
         isActive: newValue,
       });
 

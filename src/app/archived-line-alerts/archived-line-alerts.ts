@@ -121,7 +121,7 @@ export class ArchivedLineAlerts implements OnInit {
     alert.isActive = newValue;
 
     try {
-      const success = await this.api.updateAlertAsync('line', 'working', alert.id, {
+      const success = await this.api.updateAlertAsync('line', 'archived', alert.id, {
         isActive: newValue,
       });
 
